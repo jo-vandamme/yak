@@ -1,11 +1,10 @@
+#include <yak/kernel.h>
 #include <yak/config.h>
 #include <yak/initcall.h>
-#include <yak/lib/types.h>
 #include <yak/lib/string.h>
 #include <yak/lib/utils.h>
+#include <yak/arch/spinlock.h>
 #include <yak/boot/multiboot.h>
-#include <yak/video/printk.h>
-#include <yak/video/terminal.h>
 #include <yak/cpu/percpu.h>
 #include <yak/cpu/mp.h>
 #include <yak/mem/vmm.h>
@@ -47,6 +46,8 @@ enum { FRAMES_PER_BLOCK =
 static uintptr_t frame_stack_base;
 static unsigned long total_frames;
 
+static spinlock_t lock;
+
 // each stack uses 2 consecutive pages to map its content (list of pointers)
 // The pages for the global stack come first, followed by the pages for the
 // local stacks. This macro returns the first page for a specific core
@@ -64,11 +65,10 @@ static uintptr_t acquire_stack_block(void)
         // before calling panic
         panic("Out of memory\n");
     }
-    
-    // lock here
 
     // we return the currently mapped block to the calling cpu
     // for this, we get its address and then map the next block
+    spin_lock(&lock);
     uintptr_t block = stack->top->this_frame;
     stack->top = (stack_block_t *)map(frame_stack_base, stack->top->next_block, 3);
 
@@ -77,6 +77,7 @@ static uintptr_t acquire_stack_block(void)
     } else {
         // TODO we should try to release unused memory in a background thread
     }
+    spin_unlock(&lock);
 
     return block;
 }
@@ -87,12 +88,13 @@ static void release_stack_block(uintptr_t frame)
     //printk("release_stack_block()\n");
     frame_stack_t *stack = &global_frame_stack;
 
-    // lock here
+    spin_lock(&lock);
     uintptr_t block = stack->top->this_frame;
     stack->top = (stack_block_t *)map(frame_stack_base, frame, 3);
     stack->top->next_block = block;
 
     stack->free_frames += FRAMES_PER_BLOCK;
+    spin_unlock(&lock);
 }
 
 // allocate a physical frame from the current cpu local stack

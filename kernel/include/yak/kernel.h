@@ -10,6 +10,8 @@
      panic("Assertion failed: %s, function %s, file %s, line %u.", \
         #condition, __FUNCTION__, __FILE__, __LINE__))
 
+typedef uint32_t flags_t;
+
 static inline void mem_barrier(void)
 {
     asm volatile("" ::: "memory");
@@ -28,6 +30,18 @@ static inline void local_irq_enable(void)
 static inline void local_irq_disable(void)
 {
     asm volatile("cli");
+}
+
+static inline flags_t local_irq_save(void)
+{
+    flags_t flags;
+    asm volatile("pushf; pop %0; cli" : "=rm" (flags));
+    return flags;
+}
+
+static inline void local_irq_restore(flags_t flags)
+{
+    asm volatile("push %0; popf" : : "rm" (flags));
 }
 
 #endif

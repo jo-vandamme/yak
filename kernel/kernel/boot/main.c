@@ -48,15 +48,24 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     kbd_init();
 }
 
+#include <yak/cpu/interrupt.h>
+void func(registers_t *r)
+{
+    (void)r;
+    if (lapic_id() == 0)
+        printk(".");
+}
+
 void kernel_main(u64_t magic, u64_t mboot)
 {
     init_system(magic, mboot);
 
     reclaim_init_mem();
 
-    asm volatile("int $40");
+    //isr_register(80, reclaim);
+    //lapic_send_ipi(3, 80);
 
-    lapic_send_ipi(3, 80);
+    isr_register(0x20, func);
 
     for (;;) {
         if (kbd_lastchar() == 'q')

@@ -3,6 +3,10 @@ ioapic code
 intr source override from madt
 intr source from madt
 allocate on demand for kernel allocations (use stack for local management)
+printk should work for 64 bit
+printk bug with -O3
+remove identity mapping
+unmap unecessary zones
 
 get lapic base from msr, not from madt in case it doesn't exist
 

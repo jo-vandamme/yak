@@ -12,7 +12,7 @@ STAGE1_OBJ = stage1.o
 STAGE2_OBJ = stage2.o
 STAGE1_BIN = stage1.bin
 STAGE2_BIN = stage2.bin
-INC = /home/jo/dev/yak-64/sysroot/usr/include
+INC = /home/jo/dev/yak/sysroot/usr/include
 DISK = ../disk.img
 
 all: $(STAGE1_BIN) $(STAGE2_BIN) 

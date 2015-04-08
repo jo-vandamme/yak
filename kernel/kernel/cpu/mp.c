@@ -79,14 +79,11 @@ void ap_main(unsigned int id, uintptr_t percpu_base)
     percpu_init(id, percpu_base);
     lapic_enable(0);
     *(unsigned char *)(VMM_P2V(AP_STATUS_FLAG)) = AP_READY;
+    local_irq_enable();
 
     uintptr_t frame = alloc_frame();
     printk("frame %08x%08x\n", frame >> 32, frame);
     print_mem_stat_local();
-
-    //printk("lapic id %u\n", lapic_id());
-
-    local_irq_enable();
 
     for (;;)
         cpu_relax();
