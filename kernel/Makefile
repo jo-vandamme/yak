@@ -38,6 +38,7 @@ OBJS:=\
 	kernel/arch/pit.o \
 	kernel/arch/ports.o \
 	kernel/arch/tsc.o \
+	kernel/arch/spinlock.o \
 	kernel/dev/keyboard.o \
 
 all: yak.elf

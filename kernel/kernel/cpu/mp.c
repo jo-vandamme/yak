@@ -1,4 +1,4 @@
-#include <yak/lib/types.h>
+#include <yak/kernel.h>
 #include <yak/lib/string.h>
 #include <yak/lib/utils.h>
 #include <yak/arch/acpi.h>
@@ -10,7 +10,6 @@
 #include <yak/mem/vmm.h>
 #include <yak/mem/pmm.h>
 #include <yak/mem/mem.h>
-#include <yak/video/printk.h>
 #include <yak/cpu/idt.h>
 #include <yak/cpu/gdt.h>
 #include <yak/cpu/percpu.h>
@@ -79,19 +78,18 @@ void ap_main(unsigned int id, uintptr_t percpu_base)
 {
     percpu_init(id, percpu_base);
     lapic_enable(0);
+    *(unsigned char *)(VMM_P2V(AP_STATUS_FLAG)) = AP_READY;
 
     uintptr_t frame = alloc_frame();
     printk("frame %08x%08x\n", frame >> 32, frame);
     print_mem_stat_local();
 
-    printk("lapic id %u\n", lapic_id());
+    //printk("lapic id %u\n", lapic_id());
 
-    *(unsigned char *)(VMM_P2V(AP_STATUS_FLAG)) = AP_READY;
-
-    asm volatile("sti");
+    local_irq_enable();
 
     for (;;)
-        asm volatile("pause" ::: "memory");
+        cpu_relax();
 }
 
 #define CMOS_ADDRESS 0x70

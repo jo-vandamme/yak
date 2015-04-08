@@ -19,10 +19,11 @@
 
 #define LSHIFT      0x2a
 #define RSHIFT      0x36
-#define CAPSLOCK    0x1d
+#define CAPSLOCK    0x3a
 
 static uint8_t last_char = 0;
-static uint32_t shift_pressed = 0;
+static uint8_t shift_pressed = 0;
+static uint8_t capslock = 0;
 
 #define KBD_BUF_SIZE    32
 static uint8_t kbd_buffer[KBD_BUF_SIZE];
@@ -44,6 +45,16 @@ union status_reg {
     } __attribute__((packed));
     uint8_t raw;
 };
+
+union lights_state {
+    struct {
+        uint8_t scroll  : 1;
+        uint8_t num     : 1;
+        uint8_t caps    : 1;
+    } __attribute__((packed));
+    uint8_t raw;
+};
+static union lights_state lights;
 
 // read the keyboard controller status
 static inline union status_reg kbd_read_status(void)
@@ -94,14 +105,25 @@ static void kbd_handler(__attribute__((unused)) registers_t *r)
     /* if the top bit of the byte is set, a key has just been released */
     if (scancode & 0x80) {
         scancode &= 0x7f;
-        if (scancode == LSHIFT || scancode == RSHIFT)
+        if (scancode == LSHIFT || scancode == RSHIFT) {
             shift_pressed = 0;
+            if (!capslock) {
+                lights.caps = 0;
+                kbd_set_leds(lights.scroll, lights.num, lights.caps);
+            }
+        }
 
     } else { /* a key has just been pressed */
         if (scancode == LSHIFT || scancode == RSHIFT) {
             shift_pressed = 1;
+            lights.caps = 1;
+            kbd_set_leds(lights.scroll, lights.num, lights.caps);
+        } else if (scancode == CAPSLOCK) {
+            capslock = !capslock;
+            lights.caps = !lights.caps;
+            kbd_set_leds(lights.scroll, lights.num, lights.caps);
         } else {
-            printk("%c", keymap_us[shift_pressed][scancode]);
+            printk("%c", keymap_us[shift_pressed | capslock][scancode]);
 
             last_char = keymap_us[shift_pressed][scancode];
             if (((write_idx + 1) % KBD_BUF_SIZE) != read_idx) {
@@ -133,14 +155,13 @@ uint8_t kbd_lastchar()
 void kbd_init()
 {
     (void)kbd_read_buffer;
-    printk("keyboard status = %x\n", kbd_read_status().raw);
+    //printk("keyboard status = %x\n", kbd_read_status().raw);
     kbd_send_command(0xae, KBD_CTRL);
     
     isr_register(IRQ(IRQ_KBD), kbd_handler);
     ioapic_set_irq(IRQ_KBD, 0, IRQ(IRQ_KBD));
     printk(LOG " Keyboard initialized\n");
 
-    pit_udelay(1000);
-    kbd_set_leds(1, 1, 1);
+    kbd_set_leds(0, 0, 0);
 }
 

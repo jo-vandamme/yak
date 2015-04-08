@@ -1,12 +1,10 @@
 #include <yak/kernel.h>
 #include <yak/config.h>
 #include <yak/initcall.h>
-#include <yak/lib/types.h>
 #include <yak/lib/string.h>
 #include <yak/boot/multiboot.h>
 #include <yak/video/vbe.h>
 #include <yak/video/terminal.h>
-#include <yak/video/printk.h>
 #include <yak/cpu/idt.h>
 #include <yak/cpu/mp.h>
 #include <yak/mem/mem.h>
@@ -61,12 +59,6 @@ void kernel_main(u64_t magic, u64_t mboot)
     lapic_send_ipi(3, 80);
 
     for (;;) {
-        kbd_set_leds(1, 1, 1);
-        pit_mdelay(500);
-        kbd_set_leds(1, 1, 0);
-        pit_mdelay(500);
-        //asm volatile("pause" ::: "memory");
-
         if (kbd_lastchar() == 'q')
             kbd_reset_system();
     }

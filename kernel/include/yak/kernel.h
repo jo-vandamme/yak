@@ -15,6 +15,11 @@ static inline void mem_barrier(void)
     asm volatile("" ::: "memory");
 }
 
+static inline void cpu_relax(void)
+{
+    asm volatile("pause" ::: "memory");
+}
+
 static inline void local_irq_enable(void)
 {
     asm volatile("sti");

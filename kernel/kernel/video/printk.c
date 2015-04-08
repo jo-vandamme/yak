@@ -1,8 +1,10 @@
 #include <stdarg.h>
-
 #include <yak/lib/format.h>
+#include <yak/arch/spinlock.h>
 #include <yak/video/terminal.h>
 #include <yak/video/printk.h>
+
+static spinlock_t lock;
 
 int printk(const char *fmt, ...)
 {
@@ -14,11 +16,13 @@ int printk(const char *fmt, ...)
     n = vsprintf(buf, fmt, args);
     va_end(args);
 
-    c = term_fg_color(0x30f030);
-    //term_puts("[kernel] ");
-    term_fg_color(c);
+    spin_lock(&lock);
 
+    c = term_fg_color(0x30f030);
+    term_fg_color(c);
     term_puts(buf);
+
+    spin_unlock(&lock);
 
     return n;
 }
