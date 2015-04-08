@@ -1,0 +1,30 @@
+SECTIONS
+{
+    . = 0x8000;
+    .text : AT(0x8000)
+    {
+        _text = .;
+        *(.text);
+        _text_end = .;
+    }
+    .data :
+    {
+        _data = .;
+        *(.bss);
+        *(.bss*);
+        *(.data);
+        *(.rodata*);
+        *(COMMON)
+        _data_end = .;
+    }
+
+    /DISCARD/ :
+    {
+        *(.eh_frame);
+        *(.note*);
+        *(.iplt*);
+        *(.igot*);
+        *(.rel*);
+        *(.comment);
+    }
+}

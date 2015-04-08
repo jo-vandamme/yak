@@ -1,0 +1,14 @@
+spinlocks
+ioapic code
+intr source override from madt
+intr source from madt
+allocate on demand for kernel allocations (use stack for local management)
+
+get lapic base from msr, not from madt in case it doesn't exist
+
+pmm - use zones 
+
+ps2 controller driver
+keyboard driver
+mouse driver
+basic gui
