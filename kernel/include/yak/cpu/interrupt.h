@@ -5,7 +5,7 @@
 
 #define IRQ(x) ((x) + 0x20)
 
-typedef void (*isr_t)(registers_t *regs);
+typedef void (*isr_t)(void *regs);
 
 void isr_register(const uint8_t vector, const isr_t isr);
 void isr_unregister(const uint8_t vector, const isr_t isr);

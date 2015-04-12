@@ -9,6 +9,6 @@
 
 #define NUM_TERM        5
 
-#define TIMER_FREQ      100
+#define TIMER_FREQ      1000
 
 #endif

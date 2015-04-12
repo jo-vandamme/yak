@@ -48,13 +48,13 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     kbd_init();
 }
 
-#include <yak/cpu/interrupt.h>
-void func(registers_t *r)
+void func(void *r)
 {
     (void)r;
-    if (lapic_id() == 0)
-        printk(".");
+    //if (lapic_id() == 0)
+    //    printk(".");
 }
+#include <yak/cpu/interrupt.h>
 
 void kernel_main(u64_t magic, u64_t mboot)
 {

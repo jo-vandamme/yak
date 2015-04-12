@@ -10,6 +10,8 @@
      panic("Assertion failed: %s, function %s, file %s, line %u.", \
         #condition, __FUNCTION__, __FILE__, __LINE__))
 
+#define __packed __attribute__((packed))
+
 typedef uint32_t flags_t;
 
 static inline void mem_barrier(void)

@@ -98,7 +98,7 @@ void kbd_reset_system(void)
     kbd_send_command(0xfe, KBD_ENC);
 }
 
-static void kbd_handler(__attribute__((unused)) registers_t *r)
+static void kbd_handler(__attribute__((unused)) void *r)
 {
     uint8_t scancode = inb(KBD_ENC_INPUT);
         

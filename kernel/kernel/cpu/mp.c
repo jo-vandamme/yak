@@ -21,42 +21,41 @@ typedef struct
 {
     uint32_t lapic_address;
     uint32_t flags;
-} __attribute__((packed)) acpi_madt_t;
+} __packed acpi_madt_t;
 
 typedef struct
 {
     uint8_t entry_type;
     uint8_t record_length;
-} __attribute__((packed)) madt_record_t;
+} __packed madt_record_t;
 
 typedef struct
 {
     uint8_t acpi_proc_id;
     uint8_t lapic_id;
     uint32_t flags;
-} __attribute__((packed)) acpi_lapic_t;
+} __packed madt_lapic_t;
 
 typedef struct
 {
     uint8_t id;
     uint8_t reserved;
     uint32_t address;
-    uint32_t global_system_interrupt_base;
-} __attribute__((packed)) acpi_ioapic_t;
+    uint32_t interrupt_base;
+} __packed madt_ioapic_t;
 
 typedef struct
 {
     uint8_t bus_source;
     uint8_t irq_source;
-    uint32_t global_system_interrupt;
+    uint32_t interrupt;
     uint16_t flags;
-} __attribute__((packed)) acpi_int_t;
+} __packed madt_int_override_t;
 
 enum { 
-    ACPI_LOCAL_APIC = 0,
-    ACPI_IO_APIC = 1,
-    ACPI_INT_SRC_OVERRIDE = 2,
-    ACPI_PLATFORM_INT_SRC = 4
+    MADT_LAPIC = 0,
+    MADT_IOAPIC = 1,
+    MADT_INT_SRC_OVERRIDE = 2
 };
 
 struct mp_params
@@ -67,7 +66,7 @@ struct mp_params
     uintptr_t stack_ptr;
     uintptr_t percpu_ptr;
     unsigned int id;
-} __attribute__((packed));
+} __packed;
 
 static unsigned int total_cores = 0;
 static unsigned int enabled_cores = 0;
@@ -155,7 +154,7 @@ unsigned int count_cpus(uintptr_t madt_address)
     while (record < (uint8_t *)madt_header + madt_header->length) {
         if (*record == 0) {
             ++total_cores;
-            acpi_lapic_t *lapic_record = (acpi_lapic_t *)(record + sizeof(madt_record_t));
+            madt_lapic_t *lapic_record = (madt_lapic_t *)(record + sizeof(madt_record_t));
             // make sure the cpu is enabled (bit 0 set)
             if ((lapic_record->flags & 0x1) == 1)
                 ++enabled_cores;
@@ -222,8 +221,8 @@ void mp_init(uintptr_t madt_address)
     uint8_t *record = (uint8_t *)madt_data + sizeof(acpi_madt_t);
     while (record < (uint8_t *)madt_header + madt_header->length) {
         switch (*record) {
-            case 0: ;
-                acpi_lapic_t *lapic_record = (acpi_lapic_t *)(record + sizeof(madt_record_t));
+            case MADT_LAPIC: ;
+                madt_lapic_t *lapic_record = (madt_lapic_t *)(record + sizeof(madt_record_t));
                 if ((lapic_record->flags & 0x1) == 1 && lapic_record->lapic_id != bsp_id) {
 
                     params.id = next_proc_id++;
@@ -237,22 +236,23 @@ void mp_init(uintptr_t madt_address)
                 }
                 break;
 
-            case 1: ;
-                acpi_ioapic_t *ioapic_record = (acpi_ioapic_t *)(record + sizeof(madt_record_t));
-                ioapic_add(ioapic_record->id, ioapic_record->address);
+            case MADT_IOAPIC: ;
+                madt_ioapic_t *ioapic_record = (madt_ioapic_t *)(record + sizeof(madt_record_t));
+                ioapic_add(ioapic_record->id, ioapic_record->address, ioapic_record->interrupt_base);
                 break;
-            case 2:
-                printk(LOG " INT OVERRIDE\n");
+
+            case MADT_INT_SRC_OVERRIDE: ;
+                madt_int_override_t *override = (madt_int_override_t *)(record + sizeof(madt_record_t));
+                printk(LOG " ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = 0x%04x\n",
+                        override->bus_source, override->irq_source, override->interrupt, override->flags);
                 break;
-            case 4:
-                printk(LOG " INT SRC\n");
-                break;
+
             default:
-                printk(LOG " \33\x0f\x40Unknown MADT entry type: %u\n", *record);
+                printk(LOG " \33\x0f\x40Skipping MADT entry type: %u\n", *record);
                 break;
         }
-        record += *(record + 1);
+        record += *(record + 1); // add length (field 1)
     }
 
-    ioapic_init();
+    local_irq_enable();
 }

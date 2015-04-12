@@ -100,8 +100,9 @@ void fault_handler(registers_t *regs)
           regs->cs, regs->ss);
 }
 
-void interrupt_dispatch(registers_t *regs)
+void interrupt_dispatch(void *r)
 {
+    registers_t *regs = (registers_t *)r;
     if (regs->int_no < IRQ(0)) {
         fault_handler(regs);
     }
