@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script type="text/javascript" src="jquery-1.11.2.min.js"></script>
+        <script type="text/javascript" src="main.js"></script>
+        <link rel="stylesheet" type="text/css" href="main.css" />
+        <title>Font tool</title>
+    </head>
+
+    <body>
+        <h1>Font drawing tool</h1>
+        <label for="cols">Width:</label><textarea id="cols">8</textarea>
+        <label for="rows">Height:</label><textarea id="rows">12</textarea>
+        <label for="cell">Cell size:</label><textarea id="cell">20</textarea><br />
+        <label for="char">Char to draw:</label><textarea id="char"></textarea>
+        <label for="code">ASCII code: </label><div id="code"></div><br />
+        <button id="save">Save</button>
+        <canvas id="grid">
+            <p>Your browser does not support HTML5 canvas</p>
+        </canvas>
+        <div id="data"></div>
+    </body>
+</html>
