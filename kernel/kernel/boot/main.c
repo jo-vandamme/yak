@@ -30,12 +30,7 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");
 
-    printk("\33\x0f\xf0"        \
-           "           (__)\n"  \
-           "   /-------(-o)\n"  \
-           "  /|  YAK  /\\/  \33\x0a\xf0 BOOOOOting \33\x0f\xff[%ux%ux%u]\33\x0f\xf0\n"  \
-           " # ||----||\n\n", 
-           mode_info->res_x, mode_info->res_y, mode_info->bpp);
+    printk("\33\x0f\xf0YAK is booting \33\x0f\xff[%ux%ux%u]\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
     
     // we should not allocate memory before mem_init()
     // this means that some PML3...PML1 tables must be set statistically

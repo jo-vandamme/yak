@@ -10,7 +10,7 @@
 
 static void putch32(struct surface *surf, char c, int color)
 {
-    const unsigned char * const font = font8x8[(uint8_t)c];
+    const unsigned char * const font = font8x16[(uint8_t)c];
     unsigned int *const video = (unsigned int *)surf->backbuffer;
     const int pitch = surf->fb_w;
     volatile unsigned where = (surf->ox + surf->x) + (surf->oy + surf->y) * pitch;
@@ -94,7 +94,7 @@ static void scroll(struct surface *surf)
 
 void surface_init(struct surface *surf)
 {
-    init_font();
+    //init_font();
 
     if (!surf)
         return;
