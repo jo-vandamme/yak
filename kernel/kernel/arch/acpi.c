@@ -142,13 +142,13 @@ INIT_CODE uintptr_t acpi_init(void)
            rsdt->oem_revision, creator_id, rsdt->creator_revision);
 
     madt = search_sdt(rsdt_address, use_xsdt, "APIC");
-    if (madt) {
-        printk("%s MADT found\n", logid);
+    if (!madt) {
+        printk("%s No SMP support\n", logid);
     }
 
     uintptr_t hpet = search_sdt(rsdt_address, use_xsdt, "HPET");
-    if (hpet) {
-        printk("%s HPET found\n", logid);
+    if (!hpet) {
+        printk("%s No HPET support\n", logid);
     }
 
     return madt;

@@ -2,7 +2,7 @@
 #include <yak/lib/types.h>
 
 #include <yak/video/video.h>
-#include <yak/video/font8x8.h>
+#include <yak/video/default_font.h>
 
 #define LINE_SPACE 4
 #define FONT_SPACE 0
@@ -10,7 +10,7 @@
 
 static void putch32(struct surface *surf, char c, int color)
 {
-    const unsigned char * const font = font8x16[(uint8_t)c];
+    const unsigned char * const font = default_font[(uint8_t)c];
     unsigned int *const video = (unsigned int *)surf->backbuffer;
     const int pitch = surf->fb_w;
     volatile unsigned where = (surf->ox + surf->x) + (surf->oy + surf->y) * pitch;

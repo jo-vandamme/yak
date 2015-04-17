@@ -63,7 +63,7 @@ void kernel_main(u64_t magic, u64_t mboot)
     isr_register(0x20, func);
 
     for (;;) {
-        if (kbd_lastchar() == 'q')
-            kbd_reset_system();
+        //if (kbd_lastchar() == 'q')
+        //    kbd_reset_system();
     }
 }
