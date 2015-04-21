@@ -43,19 +43,73 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     kbd_init();
 }
 
+static unsigned char *num2str(unsigned char *buf, unsigned radix, unsigned long long num, int upper)
+{
+    unsigned long i;
+    do {
+        i = (unsigned long)num % radix;
+        buf--;
+        *buf = (i < 10) ? i + '0' : (upper ? i - 10 + 'A' : i - 10 + 'a');
+        num = (unsigned long long)num / radix;
+    } while (num != 0);
+    return buf;
+}
+
 void func(void *r)
 {
     (void)r;
     //if (lapic_id() == 0)
     //    printk(".");
 }
+
 #include <yak/cpu/interrupt.h>
+#include <yak/lib/sort.h>
+
+/* marsaglia's xorshift generator */
+static unsigned long x = 123456789, y = 362436069, z = 521288629;
+unsigned long xorshift96(void)
+{
+    unsigned long t;
+    x ^= x << 16;
+    x ^= x >> 5;
+    x ^= x << 1;
+    t = x;
+    x = y;
+    y = z;
+    z = t ^ x ^ y;
+    return z;
+}
+
+int cmp_long(void *a, void *b)
+{
+    return *(long *)a - *(long *)b;
+}
 
 void kernel_main(u64_t magic, u64_t mboot)
 {
     init_system(magic, mboot);
 
     reclaim_init_mem();
+
+    unsigned char buf[100] = { 0 };
+    unsigned char *ptr = buf + 100;
+    unsigned char *ptr2 = num2str(ptr, 2, 0xdeadbabacafecaca, 0);
+    printk("%s\n", ptr2);
+
+    long tab1[50];
+    long tab2[50];
+    for (unsigned i = 0; i < sizeof(tab1) / sizeof(*tab1); ++i) {
+        tab1[i] = ((float)xorshift96() / (float)UINT64_MAX) * 100;
+        tab2[i] = tab1[i];
+        printk("\033\x0f\xf0%u ", tab1[i]);
+    }
+    printk("\n");
+    
+    qsort(tab2, sizeof(tab2) / sizeof(*tab2), sizeof(*tab2), cmp_long);
+
+    for (unsigned i = 0; i < sizeof(tab2) / sizeof(*tab2); ++i)
+        printk("%u ", tab2[i]);
+    printk("\n");
 
     //isr_register(80, reclaim);
     //lapic_send_ipi(3, 80);

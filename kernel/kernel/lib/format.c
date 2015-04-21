@@ -225,6 +225,9 @@ int vsprintf(char *buf, const char *fmt, va_list args)
             case 'd':
             case 'i':
                 flags |= SIGNED;
+                str = num_to_base(str, va_arg(args, signed long),
+                                  10, field_width, precision, flags);
+                break;
             case 'u':
                 str = num_to_base(str, va_arg(args, unsigned long),
                                   10, field_width, precision, flags);

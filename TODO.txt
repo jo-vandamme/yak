@@ -11,6 +11,19 @@ get lapic base from msr, not from madt in case it doesn't exist
 
 pmm - use zones 
 
+order madt entries before using them
+enumerate pci devices
+give detailed cpu info with cpuid
+cleanup boot code
+optimized memory functions (SSE)
+cmos
+rtc
+hpet
+good spinlocks
+DMA
+gui will be a user task
+simple malloc for user tasks
+
 ps2 controller driver
 keyboard driver
 mouse driver
