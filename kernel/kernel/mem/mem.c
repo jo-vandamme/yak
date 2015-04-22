@@ -72,7 +72,7 @@ INIT_CODE void mem_reloc_boot_structs(void)
         strcpy((char *)ptr, (const char *)((uintptr_t)mbi->boot_loader_name));
         mbi->boot_loader_name = VMM_V2P(ptr);
     }
-    printk(LOG " multiboot structures relocated\n");
+    //printk(LOG " multiboot structures relocated\n");
 }
 
 extern const char kernel_percpu_start[];

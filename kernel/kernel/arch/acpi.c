@@ -102,10 +102,12 @@ INIT_CODE uintptr_t acpi_init(void)
         printk(LOG " No ACPI support detected!\n");
         return madt;
     }
+    /*
     char oem_id[7] = { 0 };
     memcpy(oem_id, rsdp->oem_id, 6);
     printk(LOG " RSDP [%016x] - Rev: %u - OEMID: %s\n",
            ((uintptr_t)rsdp - VIRTUAL_BASE), rsdp->revision + 1, oem_id);
+           */
 
     int use_xsdt = 0;
     uintptr_t rsdt_address = (uintptr_t)rsdp->rsdt_address;
@@ -124,6 +126,7 @@ INIT_CODE uintptr_t acpi_init(void)
         printk(LOG " Bad RSDT checksum\n");
         return madt;
     }
+    /*
     char oem_table_id[9] = { 0 };
     memcpy(oem_id, rsdt->oem_id, 6);
     memcpy(oem_table_id, rsdt->oem_table_id, 8);
@@ -138,6 +141,7 @@ INIT_CODE uintptr_t acpi_init(void)
            "Creator ID: %s - Creator Rev: %u\n",
            rsdt_address, rsdt->revision, oem_id, oem_table_id, 
            rsdt->oem_revision, creator_id, rsdt->creator_revision);
+    */
 
     madt = search_sdt(rsdt_address, use_xsdt, "APIC");
     if (!madt) {

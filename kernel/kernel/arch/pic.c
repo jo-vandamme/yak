@@ -46,5 +46,5 @@ void pic_disable(void)
     outb(SLAVE_DATA, 0xff);
     io_wait();
 
-    printk(LOG " pic disabled\n");
+    //printk(LOG " pic disabled\n");
 }

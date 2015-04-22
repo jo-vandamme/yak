@@ -11,7 +11,7 @@
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
 
-#define logid "\33\x0a\xf0pmm   ::\33r"
+#define LOG "\33\x0a\xf0pmm   ::\33r"
 
 extern multiboot_info_t *mbi;
 
@@ -172,8 +172,8 @@ static void print_mem_stat(frame_stack_t *stack)
 {
     unsigned long total_free = stack->free_frames * PAGE_SIZE;
 
-    printk("%s %uMiB-%uKiB = %u frames available\n", 
-            logid, byte2mb(total_free), byte2kb(total_free), stack->free_frames);
+    printk(LOG " memory available: %uGiB-%uMiB-%uKiB (%u frames)\n", 
+            byte2gb(total_free), byte2mb(total_free), byte2kb(total_free), stack->free_frames);
 }
 
 inline void print_mem_stat_local(void)
@@ -213,12 +213,12 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
         if (frame == 0)
             frame += PAGE_SIZE;
 
-        printk("%s freeing %016x:%016x - %uMB-%uKB = %u frames ", 
-            logid, frame, last_frame, 
-            byte2mb(last_frame - frame), byte2kb(last_frame - frame), 
-            (last_frame - frame) / PAGE_SIZE);
+        //printk("%s freeing %016x:%016x - %uMB-%uKB = %u frames ", 
+        //    logid, frame, last_frame, 
+        //    byte2mb(last_frame - frame), byte2kb(last_frame - frame), 
+        //    (last_frame - frame) / PAGE_SIZE);
 
-        unsigned long i = 0;
+        //unsigned long i = 0;
         for (; frame + PAGE_SIZE <= last_frame; frame += PAGE_SIZE) {
 
             if ((frame >= TRAMPOLINE_START && frame < TRAMPOLINE_END) ||
@@ -242,9 +242,9 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
                 s->frames[s->num_frames++] = frame;
             }
             ++stack->free_frames;
-            if (++i % 50000 == 0) printk(".");
+            //if (++i % 50000 == 0) printk(".");
         }
-        printk("\n");
+        //printk("\n");
     }
     total_frames = global_frame_stack.free_frames;
     print_mem_stat_global();

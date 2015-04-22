@@ -40,6 +40,7 @@ static inline uintptr_t clear_frame(uintptr_t frame)
 
 uintptr_t map(uintptr_t virt, uintptr_t phys, int flags)
 {
+    //printk("mapping %016x to %016x\n", virt, phys);
     uint64_t *table, idx;
     phys = align_down(phys, PAGE_SIZE);
     virt = align_down(virt, PAGE_SIZE);

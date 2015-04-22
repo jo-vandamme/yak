@@ -31,5 +31,5 @@ INIT_CODE void percpu_init(unsigned int id, uintptr_t percpu_base)
     header->self = percpu_base;
     header->id = id;
 
-    printk(LOG " percpu area ready for core %u [%016x]\n", id, percpu_base);
+    //printk(LOG " percpu area ready for core %u [%016x]\n", id, percpu_base);
 }

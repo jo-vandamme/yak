@@ -2,7 +2,7 @@
 
 sudo qemu-system-x86_64 \
     -hda disk.img \
-    -m 10G \
+    -m 3G \
     -smp 8 \
     -vga std \
     -monitor stdio \

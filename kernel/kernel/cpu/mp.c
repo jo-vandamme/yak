@@ -60,6 +60,13 @@ typedef struct
 
 typedef struct
 {
+    uint8_t acpi_proc_id;
+    uint16_t flags;
+    uint8_t lapic_lintn;
+} __packed madt_lapic_nmi_t;
+
+typedef struct
+{
     uint8_t reserved[2];
     uint64_t address;
 } __packed madt_lapic_address_t;
@@ -140,7 +147,7 @@ void ap_main(unsigned int id, uintptr_t percpu_base)
 
 void start_ap(unsigned int proc_id, unsigned int lapic_id, uintptr_t addr)
 {
-    printk(LOG " starting core %u (lapic id %u)\n", proc_id, lapic_id);
+    //printk(LOG " starting core #%u (lapic #%u)\n", proc_id, lapic_id);
 
     // The BSP must initialize CMOS shutdown code to 0x0a...
     outb(CMOS_ADDRESS, 0xf); // offset 0xf is shutdown code
@@ -173,7 +180,7 @@ void start_ap(unsigned int proc_id, unsigned int lapic_id, uintptr_t addr)
     }
     if (*ap_status != AP_STARTED) {
         *ap_status = AP_READY; // don't block bsp
-        printk(LOG "\33\x0f\x40 Unable to start core %u\n", proc_id);
+        printk(LOG "\33\x0f\x40 Unable to start core %u with lapic id %u\n", proc_id, lapic_id);
     } else {
         *ap_status = AP_CONTINUE;
         ++cores_alive;
@@ -219,7 +226,7 @@ INIT_CODE void madt_get_info(uintptr_t madt_address, struct madt_info *info)
         }
         record += *(record + 1);
     }
-    printk(LOG " detected %u core(s) (%u enabled)\n", info->total_cores, info->enabled_cores);
+    printk(LOG " detected %u core(s) - %u enabled\n", info->total_cores, info->enabled_cores);
 }
 
 extern const char trampoline[];
@@ -277,6 +284,7 @@ INIT_CODE void mp_init1(void)
         switch (*record) {
             case MADT_LAPIC: ;
                 madt_lapic_t *lapic_record = (madt_lapic_t *)(record + sizeof(madt_record_t));
+                //printk("lapic id %u acpi id %u\n", lapic_record->lapic_id, lapic_record->acpi_proc_id);
                 if ((lapic_record->flags & ENABLED) && lapic_record->lapic_id != bsp_id) {
 
                     params.id = next_proc_id++;
@@ -297,22 +305,24 @@ INIT_CODE void mp_init1(void)
 
             case MADT_INT_SRC_OVERRIDE: ;
                 madt_int_override_t *override = (madt_int_override_t *)(record + sizeof(madt_record_t));
-                printk(LOG " ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = 0x%04x\n",
+                printk(LOG " ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = %#04x\n",
                         override->bus_source, override->irq_source, override->interrupt, override->flags);
                 break;
 
-            default: ;
-                const char *label;
-                if (*record >= 0xd)
-                    label = "Reserved";
-                else
-                    label = madt_entry_label[*record];
+            case MADT_LAPIC_NMI: ;
+                madt_lapic_nmi_t *lapic_nmi = (madt_lapic_nmi_t *)(record + sizeof(madt_record_t));
+                printk(LOG " ignoring LAPIC NMI: acpi proc id = %u, flags = %04x, lapic LINTn = %u\n",
+                        lapic_nmi->acpi_proc_id, lapic_nmi->flags, lapic_nmi->lapic_lintn);
+                break;
 
-                printk(LOG " \33\x0f\x40Skipping MADT entry: \n", label);
+            default: ;
+                printk(LOG " \33\x0f\x40Skipping MADT entry: %s [%u]\n", 
+                        *record >= 0xd ? "Reserved" : madt_entry_label[*record], *record);
                 break;
         }
         record += *(record + 1); // add length (field 1)
     }
+    printk(LOG " %u cores have been started\n", cores_alive);
 
     local_irq_enable();
 }
