@@ -21,10 +21,10 @@ typedef struct ioapic
 {
     uint8_t id;
     uint8_t version;
-    uint8_t max_irq;
     uintptr_t phys_base;
     uintptr_t virt_base;
     uint32_t int_base;
+    uint8_t int_max;
 } ioapic_t;
 
 // empty bit-fields are marked as reserved in the specification
@@ -107,6 +107,19 @@ uint32_t ioapic_read(const uintptr_t ioapic_base, const uint8_t offset)
     return val;
 }
 
+static void ioapic_mask_irq(const uint8_t irq, const uint8_t ioapic_id)
+{
+    const uint32_t low_index  = IOREDTBL + irq * 2;
+    const uint32_t high_index = IOREDTBL + irq * 2 + 1;
+
+    union ioredtbl reg;
+    reg.low = ioapic_read(ioapics[ioapic_id].virt_base, low_index);
+    reg.high = ioapic_read(ioapics[ioapic_id].virt_base, high_index);
+    reg.mask = 1;
+    ioapic_write(ioapics[ioapic_id].virt_base, low_index, reg.low);
+    ioapic_write(ioapics[ioapic_id].virt_base, high_index, reg.high);
+}
+
 void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t int_base)
 {
     assert(num_ioapics < MAX_IOAPICS);
@@ -116,13 +129,19 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
     free_frame(VMM_V2P(virt_base));
     map(virt_base, ioapic_base, 3);
 
+    union ioapicver verreg = (union ioapicver)ioapic_read(virt_base, IOAPICVER);
+    union ioapicid idreg = (union ioapicid)ioapic_read(virt_base, IOAPICID);
+    assert(idreg.id == id);
+
     ioapics[num_ioapics].id = id;
+    ioapics[num_ioapics].version = verreg.version;
     ioapics[num_ioapics].phys_base = ioapic_base;
     ioapics[num_ioapics].virt_base = virt_base;
     ioapics[num_ioapics].int_base = int_base;
+    ioapics[num_ioapics].int_max = int_base + verreg.max_red_entry;
 
-    union ioapicid idreg = (union ioapicid)ioapic_read(virt_base, IOAPICID);
-    union ioapicver verreg = (union ioapicver)ioapic_read(virt_base, IOAPICVER);
+    for (int i = 0; i < verreg.max_red_entry + 1; ++i)
+        ioapic_mask_irq(i, num_ioapics);
 
     printk(LOG " base: %#016x version: %u, %u redirection entries IOAPIC ID: %u\n", 
             ioapic_base, verreg.version, verreg.max_red_entry + 1, idreg.id);
@@ -132,12 +151,21 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
 
 void ioapic_set_irq(const uint8_t irq, const uint64_t apic_id, const uint8_t vector)
 {
+    unsigned int i;
+    for (i = 0; i < num_ioapics; ++i)
+        if (irq >= ioapics[i].int_base && irq <= ioapics[i].int_max)
+            break;
+    if (i == num_ioapics) {
+        printk("\33\x0f\x40<ioapic> IRQ #%u isn't mapped to the IOAPIC(s)\n", irq);
+        return;
+    }
+
     const uint32_t low_index  = IOREDTBL + irq * 2;
     const uint32_t high_index = IOREDTBL + irq * 2 + 1;
 
     union ioredtbl reg;
-    reg.low = ioapic_read(ioapics[0].virt_base, low_index);
-    reg.high = ioapic_read(ioapics[0].virt_base, high_index);
+    reg.low = ioapic_read(ioapics[i].virt_base, low_index);
+    reg.high = ioapic_read(ioapics[i].virt_base, high_index);
 
     reg.destination = apic_id;
     reg.mask = 0;
@@ -145,7 +173,7 @@ void ioapic_set_irq(const uint8_t irq, const uint64_t apic_id, const uint8_t vec
     reg.delivery_mode = FIXED;
     reg.vector = vector;
 
-    ioapic_write(ioapics[0].virt_base, low_index, reg.low);
-    ioapic_write(ioapics[0].virt_base, high_index, reg.high);
+    ioapic_write(ioapics[i].virt_base, low_index, reg.low);
+    ioapic_write(ioapics[i].virt_base, high_index, reg.high);
 }
 
