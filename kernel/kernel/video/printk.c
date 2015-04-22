@@ -6,25 +6,22 @@
 
 static spinlock_t lock;
 
-int printk(const char *fmt, ...)
+void printk(const char *fmt, ...)
 {
     char buf[1024];
     va_list args;
-    int n, c;
 
     va_start(args, fmt);
-    n = vsprintf(buf, fmt, args);
+    vsprintf(buf, fmt, args);
     va_end(args);
 
     spin_lock(&lock);
 
-    c = term_fg_color(0x30f030);
+    int c = term_fg_color(0x30f030);
     term_fg_color(c);
     term_puts(buf);
 
     spin_unlock(&lock);
-
-    return n;
 }
 
 void panic(const char *fmt, ...)

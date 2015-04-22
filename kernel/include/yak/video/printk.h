@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 
-int printk(const char *fmt, ...);
+void printk(const char *fmt, ...);
 void panic(const char *fmt, ...);
 
 #endif

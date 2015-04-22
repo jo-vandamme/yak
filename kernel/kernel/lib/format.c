@@ -20,7 +20,6 @@
 // Return a pointer in str that points past where the number was converted and appended
 static char *num2str(char *str, unsigned long long num, unsigned radix, int width, int precision, int type)
 {
-    char sign;
     char tmp[64];
 
     if (radix < 2 || radix > 36)
@@ -31,6 +30,7 @@ static char *num2str(char *str, unsigned long long num, unsigned radix, int widt
 
     char c = (type & PAD_ZEROES) ? '0' : ' ';
 
+    char sign;
     if (type & NEGATIVE) {
         sign = '-';
     } else {
@@ -48,7 +48,7 @@ static char *num2str(char *str, unsigned long long num, unsigned radix, int widt
     else
         while (num != 0) {
             unsigned j = (unsigned)num % radix;
-            tmp[i++] = (j < 10) ? j + '0' : (LOWER_CASE ? j - 10 + 'a' : j - 10 + 'A');
+            tmp[i++] = (j < 10) ? j + '0' : (type & LOWER_CASE ? j - 10 + 'a' : j - 10 + 'A');
             num /= radix;
         }
 
@@ -64,9 +64,9 @@ static char *num2str(char *str, unsigned long long num, unsigned radix, int widt
         if (radix == 2 || radix == 8 || radix == 16)
             *str++ = '0';
         if (radix == 2)
-            *str++ = LOWER_CASE ? 'b' : 'B';
+            *str++ = type & LOWER_CASE ? 'b' : 'B';
         if (radix == 16)
-            *str++ = LOWER_CASE ? 'x' : 'X';
+            *str++ = type & LOWER_CASE ? 'x' : 'X';
     }
     if (!(type & LEFT_JUSTIFIED))
         while (width-- > 0)
@@ -100,8 +100,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
     char *str;
     for (str = buf; *fmt; fmt++)
     {
-        if (*fmt != '%')
-        {
+        if (*fmt != '%') {
             *str++ = *fmt;
             continue;
         }
@@ -109,8 +108,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
         int flags = 0;
 get_flags:
         fmt++;
-        switch (*fmt)
-        {
+        switch (*fmt) {
             case '-': flags |= LEFT_JUSTIFIED; goto get_flags;
             case '+': flags |= PLUS; goto get_flags;
             case ' ': flags |= SPACE; goto get_flags;
@@ -171,6 +169,8 @@ get_flags:
                 break;
 
             case 'b':
+                flags |= LOWER_CASE;
+            case 'B':
                 str = num2str(str, va_arg(args, unsigned long long), 2, field_width, precision, flags);
                 break;
 
