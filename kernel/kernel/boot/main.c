@@ -24,10 +24,11 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     mbi = (multiboot_info_t *)((u64_t)mboot + VIRTUAL_BASE);
     mode_info = (vbe_mode_info_t *)(mbi->vbe_mode_info + VIRTUAL_BASE);
 
-    int padding = 10;
+    int padding = 5;
     int term_w = mode_info->res_x - padding * 2;
     int term_h = mode_info->res_y - padding * 2;
-    term_init(0, mode_info, padding, padding, term_w, term_h, 0xc0c0c0, 0x000000);
+    //term_h = 100;
+    term_init(0, mode_info, padding, padding, term_w, term_h, 0xc0c0c0, 0x000000, 1);
 
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");

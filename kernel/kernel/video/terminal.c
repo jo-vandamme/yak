@@ -11,7 +11,7 @@ static struct renderer term_rend[NUM_TERM];
 static int current_term = 0;
 
 void term_init(int term, vbe_mode_info_t *mode_info, 
-               int x, int y, int w, int h, int fg_color, int bg_color)
+               int x, int y, int w, int h, int fg_color, int bg_color, int scroll)
 {
     term_surf[term].fb_w = mode_info->res_x;
     term_surf[term].fb_h = mode_info->res_y;
@@ -23,6 +23,7 @@ void term_init(int term, vbe_mode_info_t *mode_info,
     term_surf[term].h = h;
     term_surf[term].fg_color = fg_color;
     term_surf[term].bg_color = bg_color;
+    term_surf[term].scroll = scroll;
 
     term_surf[term].framebuffer = term_surf[term].backbuffer = (unsigned char *)LFB_BASE;
 

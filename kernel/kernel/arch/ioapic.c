@@ -116,9 +116,8 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
     union ioapicid idreg = (union ioapicid)ioapic_read(ioapics[num_ioapics].base, IOAPICID);
     union ioapicver verreg = (union ioapicver)ioapic_read(ioapics[num_ioapics].base, IOAPICVER);
 
-    printk(LOG " id %u base: %08x%08x version %u, %u redirection entries\n", 
-            idreg.id, ioapics[num_ioapics].base >> 32, ioapics[num_ioapics].base,
-            verreg.version, verreg.max_red_entry + 1);
+    printk(LOG " id %u base: %016x version %u, %u redirection entries\n", 
+            idreg.id, ioapics[num_ioapics].base, verreg.version, verreg.max_red_entry + 1);
 
     ++num_ioapics;
 }

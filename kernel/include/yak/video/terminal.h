@@ -5,7 +5,7 @@
 #include <yak/video/video.h>
 
 void term_init(int term, vbe_mode_info_t *mode_info, 
-               int x, int y, int w, int h, int fg_color, int bg_color);
+               int x, int y, int w, int h, int fg_color, int bg_color, int scroll);
 int term_set_current(int term);
 void term_putc(const char c);
 void term_puts(const char *str);

@@ -13,6 +13,7 @@ struct surface
     unsigned int fb_w, fb_h; /* width and height of fb */
     unsigned int fb_bpp; /* bits per pixel */
     unsigned int fg_color, bg_color;
+    unsigned int scroll;
     unsigned char *framebuffer, *backbuffer;
     struct renderer *rend;
 };

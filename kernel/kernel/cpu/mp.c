@@ -112,6 +112,7 @@ struct madt_info
     unsigned int total_cores;
     unsigned int enabled_cores;
     uint64_t lapic_address;
+    uint32_t madt_flags;
 };
 
 static struct madt_info madt_info;
@@ -196,9 +197,12 @@ INIT_CODE void madt_get_info(uintptr_t madt_address, struct madt_info *info)
 
     sdt_header_t *madt_header = (sdt_header_t *)map_temp(madt_address);
     acpi_madt_t *madt_data = (acpi_madt_t *)((uint8_t *)madt_header + sizeof(sdt_header_t));
+
     info->lapic_address = madt_data->lapic_address;
+    info->madt_flags = madt_data->flags;
     
     uint8_t *record = (uint8_t *)madt_data + sizeof(acpi_madt_t);
+
     while (record < (uint8_t *)madt_header + madt_header->length) {
         switch (*record) {
         case MADT_LAPIC:
@@ -215,7 +219,6 @@ INIT_CODE void madt_get_info(uintptr_t madt_address, struct madt_info *info)
         }
         record += *(record + 1);
     }
-
     printk(LOG " detected %u core(s) (%u enabled)\n", info->total_cores, info->enabled_cores);
 }
 
@@ -227,6 +230,10 @@ extern const char kernel_percpu_end[];
 static uintptr_t percpu_areas;
 static uintptr_t stacks;
 
+// This has to run before mem_init() and before mp_init1().
+// This function counts the cpus and allocate space for the
+// percpu areas and stacks just after BSP percpu area.
+// The BSP percpu area is also initialized.
 INIT_CODE void mp_init0(uintptr_t madt_address)
 {
     madt_get_info(madt_address, &madt_info);
@@ -237,34 +244,35 @@ INIT_CODE void mp_init0(uintptr_t madt_address)
     mem_percpu_init(madt_info.enabled_cores - 1, &percpu_areas, &stacks);
 }
 
+static INIT_CODE void trampoline_init(struct mp_params *params)
+{
+    memcpy((void *)VMM_P2V(TRAMPOLINE_START), (void *)trampoline, trampoline_end - trampoline);
+
+    asm volatile("movq %%cr3, %0" : "=r"(params->cr3));
+    asm volatile("sgdt %0" : "=m"(params->gdt_ptr));
+    asm volatile("sidt %0" : "=m"(params->idt_ptr));
+}
+
 INIT_CODE void mp_init1(void)
 {
-    sdt_header_t *madt_header = (sdt_header_t *)map_temp(madt_info.madt_address);
-    acpi_madt_t *madt_data = (acpi_madt_t *)((uint8_t *)madt_header + sizeof(sdt_header_t));
-
-    if (madt_data->flags & PCAT_COMPAT)
+    if (madt_info.madt_flags & PCAT_COMPAT)
         pic_disable();
 
     lapic_init(madt_info.lapic_address);
-
-    // remap the madt_header since apic_init uses map_temp too...
-    madt_header = (sdt_header_t *)map_temp(madt_info.madt_address);
-
     const uint8_t bsp_id = lapic_id();
 
-    memcpy((void *)VMM_P2V(TRAMPOLINE_START), (void *)trampoline, trampoline_end - trampoline);
-
-    struct mp_params params;
-    asm volatile("movq %%cr3, %0" : "=r"(params.cr3));
-    asm volatile("sgdt %0" : "=m"(params.gdt_ptr));
-    asm volatile("sidt %0" : "=m"(params.idt_ptr));
-
-    const size_t percpu_size = align_up(
-            (uintptr_t)kernel_percpu_end - (uintptr_t)kernel_percpu_start, PAGE_SIZE);
+    const size_t percpu_size = 
+        align_up((uintptr_t)kernel_percpu_end - (uintptr_t)kernel_percpu_start, PAGE_SIZE);
 
     unsigned char *ap_status = (unsigned char *)VMM_P2V(AP_STATUS_FLAG);
 
+    struct mp_params params;
+    trampoline_init(&params);
+
+    sdt_header_t *madt_header = (sdt_header_t *)map_temp(madt_info.madt_address);
+    acpi_madt_t *madt_data = (acpi_madt_t *)((uint8_t *)madt_header + sizeof(sdt_header_t));
     uint8_t *record = (uint8_t *)madt_data + sizeof(acpi_madt_t);
+
     while (record < (uint8_t *)madt_header + madt_header->length) {
         switch (*record) {
             case MADT_LAPIC: ;
