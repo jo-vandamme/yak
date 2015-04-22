@@ -8,7 +8,7 @@
 #include <yak/arch/tsc.h>
 #include <yak/arch/lapic.h>
 
-#define LOG "\33\x0a\xf0<lapic>\33r"
+#define LOG "\33\x0a\xf0lapic ::\33r"
 
 // Local APIC register offsets, divided by 4 for use as uint[] indices
 

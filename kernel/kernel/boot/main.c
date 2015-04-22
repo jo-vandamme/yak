@@ -14,6 +14,8 @@
 #include <yak/arch/lapic.h>
 #include <yak/dev/keyboard.h>
 
+#define LOG "\33\x0a\360main  ::\33r"
+
 multiboot_info_t *mbi;
 vbe_mode_info_t *mode_info;
 
@@ -30,7 +32,7 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");
 
-    printk("\33\x0f\xf0YAK is booting \33\x0f\xff[%ux%ux%u]\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
+    printk(LOG " resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
     
     // we should not allocate memory before mem_init()
     // this means that some PML3...PML1 tables must be set statistically
@@ -39,13 +41,13 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     isr_init();
     idt_init();
     tsc_init();
-    mp_init(acpi_init()); // this will call mem_init()
+    uintptr_t madt = acpi_init();
+    mp_init(madt); // this will call mem_init()
     kbd_init();
 }
 
-void func(void *r)
+void func(__unused void *r)
 {
-    (void)r;
     //if (lapic_id() == 0)
     //    printk(".");
 }
@@ -62,8 +64,6 @@ void kernel_main(u64_t magic, u64_t mboot)
     //lapic_send_ipi(3, 80);
 
     isr_register(0x20, func);
-
-    show_mem_at(0x7c00, 100, 24);
 
     for (;;) {
         //if (kbd_lastchar() == 'q')

@@ -11,7 +11,7 @@
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
 
-#define logid "\33\x0a\xf0<pmm>\33r"
+#define logid "\33\x0a\xf0pmm   ::\33r"
 
 extern multiboot_info_t *mbi;
 

@@ -2,7 +2,7 @@
 #include <yak/mem/vmm.h>
 #include <yak/arch/ioapic.h>
 
-#define LOG "\33\x0a\xf0<ioapic>\33r"
+#define LOG "\33\x0a\xf0ioapic::\33r"
 
 #define MAX_IOAPICS 8 // arbitrary
 

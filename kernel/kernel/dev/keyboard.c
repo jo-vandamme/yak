@@ -1,5 +1,4 @@
-#include <yak/lib/types.h>
-#include <yak/video/printk.h>
+#include <yak/kernel.h>
 #include <yak/cpu/interrupt.h>
 #include <yak/arch/ioapic.h>
 #include <yak/arch/ports.h>
@@ -7,7 +6,7 @@
 #include <yak/dev/keymap.h>
 #include <yak/dev/keyboard.h>
 
-#define LOG "\33\x0a\xf0<kbd>\33r"
+#define LOG "\33\x0a\xf0kbd   ::\33r"
 
 #define IRQ_KBD     1
 
@@ -98,11 +97,11 @@ void kbd_reset_system(void)
     kbd_send_command(0xfe, KBD_ENC);
 }
 
-static void kbd_handler(__attribute__((unused)) void *r)
+static void kbd_handler(__unused void *r)
 {
     uint8_t scancode = inb(KBD_ENC_INPUT);
         
-    /* if the top bit of the byte is set, a key has just been released */
+    // if the top bit of the byte is set, a key has just been released
     if (scancode & 0x80) {
         scancode &= 0x7f;
         if (scancode == LSHIFT || scancode == RSHIFT) {
@@ -113,7 +112,7 @@ static void kbd_handler(__attribute__((unused)) void *r)
             }
         }
 
-    } else { /* a key has just been pressed */
+    } else { // a key has just been pressed
         if (scancode == LSHIFT || scancode == RSHIFT) {
             shift_pressed = 1;
             lights.caps = 1;

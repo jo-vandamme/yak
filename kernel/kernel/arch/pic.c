@@ -1,3 +1,4 @@
+#include <yak/kernel.h>
 #include <yak/arch/ports.h>
 #include <yak/arch/pic.h>
 
@@ -9,6 +10,8 @@
 #define ICW1_ICW4   0x01
 #define ICW1_INIT   0x10
 #define ICW4_8086   0x01
+
+#define LOG "\33\x0a\xf0pic   ::\33r"
 
 void pic_disable(void)
 {
@@ -42,4 +45,6 @@ void pic_disable(void)
     io_wait();
     outb(SLAVE_DATA, 0xff);
     io_wait();
+
+    printk(LOG " pic disabled\n");
 }

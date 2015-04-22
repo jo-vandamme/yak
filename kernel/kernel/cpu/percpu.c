@@ -4,6 +4,8 @@
 #include <yak/mem/vmm.h>
 #include <yak/cpu/percpu.h>
 
+#define LOG "\33\x0a\360cpu   ::\33r"
+
 // each percpu area begins with this header
 struct percpu_header
 {
@@ -20,7 +22,6 @@ extern const char kernel_percpu_end[];
 // this is executed by each core
 INIT_CODE void percpu_init(unsigned int id, uintptr_t percpu_base)
 {
-    //printk("\33\x0a\xf0<cpu>\33r cpu %u percpu %08x%08x\n", id, percpu_base >> 32, percpu_base);
     size_t percpu_size = (uintptr_t)kernel_percpu_end - (uintptr_t)kernel_percpu_start;
     memset((void *)percpu_base, 0, percpu_size);
 
@@ -29,4 +30,6 @@ INIT_CODE void percpu_init(unsigned int id, uintptr_t percpu_base)
     struct percpu_header *header = (struct percpu_header *)percpu_base;
     header->self = percpu_base;
     header->id = id;
+
+    printk(LOG " percpu area ready for core %u [%016x]\n", id, percpu_base);
 }

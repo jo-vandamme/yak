@@ -11,6 +11,7 @@
         #condition, __FUNCTION__, __FILE__, __LINE__))
 
 #define __packed __attribute__((packed))
+#define __unused __attribute__((unused))
 
 typedef uint32_t flags_t;
 

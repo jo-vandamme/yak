@@ -4,16 +4,21 @@
 #include <yak/lib/types.h>
 
 #define PAD_ZEROES     (1 << 0)
-#define SIGNED         (1 << 1)
+#define NEGATIVE       (1 << 1)
 #define PLUS           (1 << 2)
 #define SPACE          (1 << 3)
 #define LEFT_JUSTIFIED (1 << 4)
 #define SPECIAL        (1 << 5)
 #define LOWER_CASE     (1 << 6)
 
+#define INT            (1 << 0)
+#define SHORT          (1 << 1)
+#define LONG           (1 << 2)
+#define LONGLONG       (1 << 3)
+
 // Converts a binary number to its string representation in any base from base 2 to base 36.
 // Return a pointer in str that points past where the number was converted and appended
-static char *num2str(char *str, long long num, unsigned radix, int width, int precision, int type)
+static char *num2str(char *str, unsigned long long num, unsigned radix, int width, int precision, int type)
 {
     char sign;
     char tmp[64];
@@ -26,9 +31,8 @@ static char *num2str(char *str, long long num, unsigned radix, int width, int pr
 
     char c = (type & PAD_ZEROES) ? '0' : ' ';
 
-    if ((type & SIGNED) && num < 0) {
+    if (type & NEGATIVE) {
         sign = '-';
-        num = -num;
     } else {
         sign = (type & PLUS) ? '+' : ((type & SPACE) ? ' ' : 0);
     }
@@ -103,7 +107,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
         }
 
         int flags = 0;
-    get_flags:
+get_flags:
         fmt++;
         switch (*fmt)
         {
@@ -167,27 +171,31 @@ int vsprintf(char *buf, const char *fmt, va_list args)
                 break;
 
             case 'b':
-                str = num2str(str, va_arg(args, long long), 2, field_width, precision, flags);
+                str = num2str(str, va_arg(args, unsigned long long), 2, field_width, precision, flags);
                 break;
 
             case 'o':
-                str = num2str(str, va_arg(args, long long), 8, field_width, precision, flags);
+                str = num2str(str, va_arg(args, unsigned long long), 8, field_width, precision, flags);
                 break;
 
             case 'x':
                 flags |= LOWER_CASE;
-            case 'X':
-                str = num2str(str, va_arg(args, long long), 16, field_width, precision, flags);
+            case 'X': ;
+                str = num2str(str, va_arg(args, unsigned long long), 16, field_width, precision, flags);
                 break;
             
             case 'u':
-                str = num2str(str, va_arg(args, long long), 10, field_width, precision, flags);
+                str = num2str(str, va_arg(args, unsigned long long), 10, field_width, precision, flags);
                 break;
             
             case 'd':
-            case 'i':
-                flags |= SIGNED;
-                str = num2str(str, va_arg(args, long long), 10, field_width, precision, flags);
+            case 'i': ;
+                signed long long num = va_arg(args, signed long long);
+                if (num < 0) {
+                    flags |= NEGATIVE;
+                    num = -num;
+                }
+                str = num2str(str, va_arg(args, signed long long), 10, field_width, precision, flags);
                 break;
 
             case 'p':

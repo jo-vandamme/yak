@@ -12,7 +12,7 @@
 #include <yak/mem/mmap.h>
 #include <yak/mem/mem.h>
 
-#define logid "\33\x0a\xf0<mem>\33r"
+#define LOG "\33\x0a\xf0mem   ::\33r"
 
 extern multiboot_info_t *mbi;
 extern vbe_mode_info_t *mode_info;
@@ -74,7 +74,7 @@ INIT_CODE void relocate_structures(void)
         strcpy((char *)ptr, (const char *)((uintptr_t)mbi->boot_loader_name));
         mbi->boot_loader_name = VMM_V2P(ptr);
     }
-    printk("%s multiboot structures relocated\n", logid);
+    printk(LOG " multiboot structures relocated\n");
 }
 
 extern const char kernel_percpu_start[];
@@ -87,7 +87,7 @@ INIT_CODE void percpu_mem_init(int ncpus, uintptr_t *area, uintptr_t *stack)
     size_t percpu_size = (uintptr_t)kernel_percpu_end - (uintptr_t)kernel_percpu_start;
 
     *area = alloc_early(percpu_size * ncpus, PAGE_SIZE);
-    //memset((void *)*area, 0, percpu_size * ncpus);
+    memset((void *)*area, 0, percpu_size * ncpus);
 
     *stack = alloc_early(STACK_SIZE * ncpus, PAGE_SIZE);
     memset((void *)*stack, 0, STACK_SIZE * ncpus);
@@ -114,7 +114,7 @@ void reclaim_init_mem(void)
         free_frame(frame - VIRTUAL_BASE);
     }
 
-    printk("%s reclaimed init memory %016x:%016x - %u frames\n", logid, start, stop, n);
+    printk(LOG " reclaimed init memory %016x:%016x - %u frames\n", start, stop, n);
 }
 
 /*

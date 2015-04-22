@@ -4,7 +4,7 @@
 #include <yak/arch/pit.h>
 #include <yak/arch/tsc.h>
 
-#define logid "\33\x0a\xf0<tsc>\33r"
+#define LOG "\33\x0a\xf0tsc   ::\33r"
 
 static uint64_t cpu_freq;
 
@@ -72,6 +72,6 @@ INIT_CODE void tsc_init(void)
     }
     cpu_freq = diff_max * (1000 / ms_delay);
 
-    printk("%s detected %u.%u MHz processor\n",
-           logid, (uint32_t)cpu_freq / 1000000, (uint8_t)(cpu_freq % 1000000));
+    printk(LOG " detected %u.%u MHz processor\n",
+           (uint32_t)cpu_freq / 1000000, (uint8_t)(cpu_freq % 1000000));
 }

@@ -3,6 +3,8 @@
 #include <yak/video/terminal.h>
 #include <yak/video/video.h>
 
+#define LOG "\33\x0a\xf0term  >\33r"
+
 static struct surface term_surf[NUM_TERM];
 static struct renderer term_rend[NUM_TERM];
 

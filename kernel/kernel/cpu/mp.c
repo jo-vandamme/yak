@@ -16,7 +16,7 @@
 #include <yak/cpu/percpu.h>
 #include <yak/cpu/mp.h>
 
-#define LOG "\33\x0a\xf0<smp>\33r"
+#define LOG "\33\x0a\xf0smp   ::\33r"
 
 typedef struct
 {
@@ -95,7 +95,7 @@ void ap_main(unsigned int id, uintptr_t percpu_base)
 
 void start_ap(unsigned int proc_id, unsigned int lapic_id, uintptr_t addr)
 {
-    printk(LOG " starting core %u (lapic id %d)\n", proc_id, lapic_id);
+    printk(LOG " starting core %u (lapic id %u)\n", proc_id, lapic_id);
 
     // The BSP must initialize CMOS shutdown code to 0x0a...
     outb(CMOS_ADDRESS, 0xf); // offset 0xf is shutdown code
@@ -233,7 +233,7 @@ void mp_init(uintptr_t madt_address)
 
                     start_ap(params.id, lapic_record->lapic_id, TRAMPOLINE_START);
                     while (*ap_status != AP_READY)
-                        asm volatile("pause" ::: "memory");
+                        cpu_relax();
                 }
                 break;
 
