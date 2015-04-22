@@ -1,6 +1,7 @@
 #include <yak/kernel.h>
 #include <yak/lib/string.h>
 #include <yak/lib/utils.h>
+#include <yak/lib/sort.h>
 #include <yak/arch/acpi.h>
 #include <yak/arch/ports.h>
 #include <yak/arch/pit.h>
@@ -152,7 +153,7 @@ unsigned int count_cpus(uintptr_t madt_address)
     enabled_cores = 0;
     uint8_t *record = (uint8_t *)madt_data + sizeof(acpi_madt_t);
     while (record < (uint8_t *)madt_header + madt_header->length) {
-        if (*record == 0) {
+        if (*record == MADT_LAPIC) {
             ++total_cores;
             madt_lapic_t *lapic_record = (madt_lapic_t *)(record + sizeof(madt_record_t));
             // make sure the cpu is enabled (bit 0 set)

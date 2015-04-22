@@ -114,8 +114,7 @@ void reclaim_init_mem(void)
         free_frame(frame - VIRTUAL_BASE);
     }
 
-    printk("%s reclaimed init memory %08x%08x:%08x%08x - %u frames\n", 
-            logid, start >> 32, start, stop >> 32, stop, n);
+    printk("%s reclaimed init memory %016x:%016x - %u frames\n", logid, start, stop, n);
 }
 
 /*
@@ -153,7 +152,7 @@ void show_mem_at(uintptr_t addr, size_t nbytes, size_t bytes_per_line)
     unsigned char *mem = (unsigned char *)addr;
     int col = term_fg_color(0xf080f0);
     for (size_t i = 0; i < nbytes; ) {
-        printk("\t0x%08x%08x - ", (uintptr_t)(mem + i) >> 32, mem + i);
+        printk("\t0x%016x - ", mem + i);
         for (size_t j = 0; j < bytes_per_line; ++j)
             printk("%02x ", mem[i++]);
         printk("\n");

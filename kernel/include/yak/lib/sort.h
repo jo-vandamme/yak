@@ -5,4 +5,11 @@
 
 void qsort(void *data, size_t nitems, size_t size, int (*compare)(void *, void *));
 
+/*
+int cmp_int(void *a, void *b)
+{
+    return *(int *)a - *(int *)b;
+}
+*/
+
 #endif

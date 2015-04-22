@@ -213,8 +213,8 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
         if (frame == 0)
             frame += PAGE_SIZE;
 
-        printk("%s freeing %08x%08x:%08x%08x - %uMB-%uKB = %u frames ", 
-            logid, frame >> 32, frame, last_frame >> 32, last_frame, 
+        printk("%s freeing %016x:%016x - %uMB-%uKB = %u frames ", 
+            logid, frame, last_frame, 
             byte2mb(last_frame - frame), byte2kb(last_frame - frame), 
             (last_frame - frame) / PAGE_SIZE);
 

@@ -104,10 +104,8 @@ INIT_CODE uintptr_t acpi_init(void)
     }
     char oem_id[7] = { 0 };
     memcpy(oem_id, rsdp->oem_id, 6);
-    printk("%s RSDP [%08x%08x] - Rev: %u - OEMID: %s\n", logid,
-           ((uintptr_t)rsdp - VIRTUAL_BASE) >> 32, 
-           ((uintptr_t)rsdp - VIRTUAL_BASE),
-           rsdp->revision + 1, oem_id);
+    printk("%s RSDP [%016x] - Rev: %u - OEMID: %s\n", logid,
+           ((uintptr_t)rsdp - VIRTUAL_BASE), rsdp->revision + 1, oem_id);
 
     int use_xsdt = 0;
     uintptr_t rsdt_address = (uintptr_t)rsdp->rsdt_address;
@@ -135,10 +133,10 @@ INIT_CODE uintptr_t acpi_init(void)
     creator_id[2] = ((cid >> 16) & 0xff);
     creator_id[1] = ((cid >> 8) & 0xff);
     creator_id[0] = (cid & 0xff);
-    printk("%s RSDT [%08x%08x] - Rev: %u - OEMID: %s\n" \
+    printk("%s RSDT [%016x] - Rev: %u - OEMID: %s\n" \
            "       OEM Table ID: %s - OEM Rev: %u - " \
            "Creator ID: %s - Creator Rev: %u\n", logid,
-           rsdt_address >> 32, rsdt_address, rsdt->revision, oem_id, oem_table_id, 
+           rsdt_address, rsdt->revision, oem_id, oem_table_id, 
            rsdt->oem_revision, creator_id, rsdt->creator_revision);
 
     madt = search_sdt(rsdt_address, use_xsdt, "APIC");
