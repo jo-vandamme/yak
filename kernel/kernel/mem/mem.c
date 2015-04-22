@@ -19,12 +19,11 @@ extern vbe_mode_info_t *mode_info;
 
 INIT_DATA static uintptr_t early_placement_address = 0;
 
-/* make an early allocation that can't be deleted, the placement
- * address points right after the kernel and is incremented after
- * each allocation, the address given is virtual since a 4MB page
- * is mapped to high memory for the kernel and 4MB is sufficient for
- * both the kernel, its data and the early allocations
- */
+// make an early allocation that can't be deleted, the placement
+// address points right after the kernel and is incremented after
+// each allocation, the address given is virtual since a 4MB page
+// is mapped to high memory for the kernel and 4MB is sufficient for
+// both the kernel, its data and the early allocations
 static INIT_CODE uintptr_t alloc_early(size_t nbytes, size_t align)
 {
     if (early_placement_address == 0) {
@@ -39,10 +38,9 @@ static INIT_CODE uintptr_t alloc_early(size_t nbytes, size_t align)
     return address;
 }
 
-/* relocate the structures allocated by the bootloader
- * and update the multiboot info pointer and fields
- */
-INIT_CODE void relocate_structures(void)
+// relocate the structures allocated by the bootloader
+// and update the multiboot info pointer and fields
+INIT_CODE void mem_reloc_boot_structs(void)
 {
     /* first relocate multiboot_info_t struct */
     uintptr_t ptr = alloc_early(sizeof(multiboot_info_t), 4);
@@ -82,7 +80,7 @@ extern const char kernel_percpu_end[];
 
 // This should be called before mem_init so the percpu areas are consecutive
 // with the bsp percpu area
-INIT_CODE void percpu_mem_init(int ncpus, uintptr_t *area, uintptr_t *stack)
+INIT_CODE void mem_percpu_init(int ncpus, uintptr_t *area, uintptr_t *stack)
 {
     size_t percpu_size = (uintptr_t)kernel_percpu_end - (uintptr_t)kernel_percpu_start;
 
@@ -95,14 +93,17 @@ INIT_CODE void percpu_mem_init(int ncpus, uintptr_t *area, uintptr_t *stack)
 
 INIT_CODE void mem_init(void)
 {
+    mem_reloc_boot_structs();
+
     pmm_init((uintptr_t)image_start, (uintptr_t)early_placement_address - VIRTUAL_BASE);
+
     vmm_init();
 }
 
 extern const char boot_mem_start[];
 extern const char init_mem_end[];
 
-void reclaim_init_mem(void)
+void mem_reclaim_init(void)
 {
     uintptr_t start = align_up((uintptr_t)boot_mem_start, PAGE_SIZE);
     uintptr_t stop = align_down((uintptr_t)init_mem_end, PAGE_SIZE);

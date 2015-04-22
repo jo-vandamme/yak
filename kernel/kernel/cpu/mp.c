@@ -1,4 +1,5 @@
 #include <yak/kernel.h>
+#include <yak/initcall.h>
 #include <yak/lib/string.h>
 #include <yak/lib/utils.h>
 #include <yak/lib/sort.h>
@@ -24,6 +25,8 @@ typedef struct
     uint32_t flags;
 } __packed acpi_madt_t;
 
+#define PCAT_COMPAT 1
+
 typedef struct
 {
     uint8_t entry_type;
@@ -36,6 +39,8 @@ typedef struct
     uint8_t lapic_id;
     uint32_t flags;
 } __packed madt_lapic_t;
+
+#define ENABLED 1
 
 typedef struct
 {
@@ -53,10 +58,42 @@ typedef struct
     uint16_t flags;
 } __packed madt_int_override_t;
 
+typedef struct
+{
+    uint8_t reserved[2];
+    uint64_t address;
+} __packed madt_lapic_address_t;
+
 enum { 
-    MADT_LAPIC = 0,
-    MADT_IOAPIC = 1,
-    MADT_INT_SRC_OVERRIDE = 2
+    MADT_LAPIC                  = 0,
+    MADT_IOAPIC                 = 1,
+    MADT_INT_SRC_OVERRIDE       = 2,
+    MADT_NMI                    = 3,
+    MADT_LAPIC_NMI              = 4,
+    MADT_LAPIC_ADDRESS_OVERRIDE = 5,
+    MADT_IOSAPIC                = 6,
+    MADT_LSAPIC                 = 7,
+    MADT_PLATFORM_INT_SOURCES   = 8,
+    MADT_PROC_LOCAL_X2APIC      = 9,
+    MADT_LOCAL_X2APIC_NMI       = 0xa,
+    MADT_GIC                    = 0xb,
+    MADT_GICD                   = 0xc
+};
+
+const char *madt_entry_label[] = {
+    [0x0] = "Processor Local APIC",
+    [0x1] = "I/O APIC",
+    [0x2] = "Interrupt Source Override",
+    [0x3] = "Non-Maskable Interrupt Source (NMI)",
+    [0x4] = "Local APIC NMI",
+    [0x5] = "Local APIC Address Override",
+    [0x6] = "I/O SAPIC",
+    [0x7] = "Local SAPIC",
+    [0x8] = "Platform Interrupt Sources",
+    [0x9] = "Processor Local x2APIC",
+    [0xa] = "Local x2APIC NMI",
+    [0xb] = "GIC",
+    [0xc] = "GICD"
 };
 
 struct mp_params
@@ -69,8 +106,15 @@ struct mp_params
     unsigned int id;
 } __packed;
 
-static unsigned int total_cores = 0;
-static unsigned int enabled_cores = 0;
+struct madt_info
+{
+    uintptr_t madt_address;
+    unsigned int total_cores;
+    unsigned int enabled_cores;
+    uint64_t lapic_address;
+};
+
+static struct madt_info madt_info;
 static unsigned int cores_alive = 1;
 static unsigned int next_proc_id = 1;
 
@@ -141,28 +185,38 @@ void start_ap(unsigned int proc_id, unsigned int lapic_id, uintptr_t addr)
     outb(CMOS_DATA, 0);
 }
 
-unsigned int count_cpus(uintptr_t madt_address)
+INIT_CODE void madt_get_info(uintptr_t madt_address, struct madt_info *info)
 {
+    info->total_cores = 0;
+    info->enabled_cores = 0;
+    info->madt_address = madt_address;
+
     if (madt_address == 0)
-        return 1;
+        return;
 
     sdt_header_t *madt_header = (sdt_header_t *)map_temp(madt_address);
     acpi_madt_t *madt_data = (acpi_madt_t *)((uint8_t *)madt_header + sizeof(sdt_header_t));
+    info->lapic_address = madt_data->lapic_address;
     
-    total_cores = 0;
-    enabled_cores = 0;
     uint8_t *record = (uint8_t *)madt_data + sizeof(acpi_madt_t);
     while (record < (uint8_t *)madt_header + madt_header->length) {
-        if (*record == MADT_LAPIC) {
-            ++total_cores;
+        switch (*record) {
+        case MADT_LAPIC:
+            ++info->total_cores;
             madt_lapic_t *lapic_record = (madt_lapic_t *)(record + sizeof(madt_record_t));
-            // make sure the cpu is enabled (bit 0 set)
-            if ((lapic_record->flags & 0x1) == 1)
-                ++enabled_cores;
+            if (lapic_record->flags & ENABLED)
+                ++info->enabled_cores;
+            break;
+
+        case MADT_LAPIC_ADDRESS_OVERRIDE: ;
+            madt_lapic_address_t *entry = (madt_lapic_address_t *)(record + sizeof(madt_record_t));
+            info->lapic_address = entry->address;
+            break;
         }
         record += *(record + 1);
     }
-    return enabled_cores;
+
+    printk(LOG " detected %u core(s) (%u enabled)\n", info->total_cores, info->enabled_cores);
 }
 
 extern const char trampoline[];
@@ -170,44 +224,35 @@ extern const char trampoline_end[];
 extern const char kernel_percpu_start[];
 extern const char kernel_percpu_end[];
 
-void mp_init(uintptr_t madt_address)
+static uintptr_t percpu_areas;
+static uintptr_t stacks;
+
+INIT_CODE void mp_init0(uintptr_t madt_address)
 {
+    madt_get_info(madt_address, &madt_info);
+
     percpu_init(0, (uintptr_t)kernel_percpu_start);
 
-    count_cpus(madt_address);
-    printk(LOG " detected %u cpu%s (%u enabled)\n", 
-            total_cores, total_cores > 1 ? "s" : "", enabled_cores);
-
     // create the percpu areas and stacks right after the bsp percpu area
-    uintptr_t percpu_areas, stacks;
-    percpu_mem_init(enabled_cores - 1, &percpu_areas, &stacks);
+    mem_percpu_init(madt_info.enabled_cores - 1, &percpu_areas, &stacks);
+}
 
-    // relocate the boot structures after the percpu areas and stacks
-    relocate_structures();
-
-    // free all available mem
-    mem_init();
-
-    sdt_header_t *madt_header = (sdt_header_t *)map_temp(madt_address);
+INIT_CODE void mp_init1(void)
+{
+    sdt_header_t *madt_header = (sdt_header_t *)map_temp(madt_info.madt_address);
     acpi_madt_t *madt_data = (acpi_madt_t *)((uint8_t *)madt_header + sizeof(sdt_header_t));
 
-    if (madt_data->flags & 0x1)
+    if (madt_data->flags & PCAT_COMPAT)
         pic_disable();
 
-    lapic_init(madt_data->lapic_address);
+    lapic_init(madt_info.lapic_address);
 
     // remap the madt_header since apic_init uses map_temp too...
-    madt_header = (sdt_header_t *)map_temp(madt_address);
+    madt_header = (sdt_header_t *)map_temp(madt_info.madt_address);
 
     const uint8_t bsp_id = lapic_id();
 
-    // TODO: I can't use memcpy here with -O3 ....
-    //memcpy((void *)VMM_P2V(TRAMPOLINE_START), (void *)trampoline, trampoline_end - trampoline);
-    unsigned char *src = (unsigned char *)trampoline;
-    unsigned char *dst = (unsigned char *)VMM_P2V(TRAMPOLINE_START);
-    unsigned char *end = src + (size_t)(trampoline_end - trampoline);
-    while (src != end)
-        *dst++ = *src++;
+    memcpy((void *)VMM_P2V(TRAMPOLINE_START), (void *)trampoline, trampoline_end - trampoline);
 
     struct mp_params params;
     asm volatile("movq %%cr3, %0" : "=r"(params.cr3));
@@ -224,7 +269,7 @@ void mp_init(uintptr_t madt_address)
         switch (*record) {
             case MADT_LAPIC: ;
                 madt_lapic_t *lapic_record = (madt_lapic_t *)(record + sizeof(madt_record_t));
-                if ((lapic_record->flags & 0x1) == 1 && lapic_record->lapic_id != bsp_id) {
+                if ((lapic_record->flags & ENABLED) && lapic_record->lapic_id != bsp_id) {
 
                     params.id = next_proc_id++;
                     params.stack_ptr = stacks + params.id * STACK_SIZE - 8;
@@ -248,8 +293,14 @@ void mp_init(uintptr_t madt_address)
                         override->bus_source, override->irq_source, override->interrupt, override->flags);
                 break;
 
-            default:
-                printk(LOG " \33\x0f\x40Skipping MADT entry type: %u\n", *record);
+            default: ;
+                const char *label;
+                if (*record >= 0xd)
+                    label = "Reserved";
+                else
+                    label = madt_entry_label[*record];
+
+                printk(LOG " \33\x0f\x40Skipping MADT entry: \n", label);
                 break;
         }
         record += *(record + 1); // add length (field 1)

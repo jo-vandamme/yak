@@ -22,7 +22,9 @@
 
 #include <yak/lib/types.h>
 
-void mp_init(uintptr_t madt);
+void mp_init0(uintptr_t madt_address);
+void mp_init1(void);
+
 unsigned int num_running_cores(void);
 
 #endif

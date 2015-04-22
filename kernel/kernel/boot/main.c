@@ -42,7 +42,9 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     idt_init();
     tsc_init();
     uintptr_t madt = acpi_init();
-    mp_init(madt); // this will call mem_init()
+    mp_init0(madt);
+    mem_init();
+    mp_init1(); 
     kbd_init();
 }
 
@@ -58,7 +60,7 @@ void kernel_main(u64_t magic, u64_t mboot)
 {
     init_system(magic, mboot);
 
-    reclaim_init_mem();
+    mem_reclaim_init();
 
     //isr_register(80, reclaim);
     //lapic_send_ipi(3, 80);
