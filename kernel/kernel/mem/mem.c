@@ -1,18 +1,16 @@
-#include <yak/config.h>
+#include <yak/kernel.h>
 #include <yak/initcall.h>
-#include <yak/lib/types.h>
 #include <yak/lib/string.h>
 #include <yak/lib/utils.h>
 #include <yak/boot/multiboot.h>
 #include <yak/video/terminal.h>
 #include <yak/video/vbe.h>
-#include <yak/video/printk.h>
 #include <yak/mem/pmm.h>
 #include <yak/mem/vmm.h>
 #include <yak/mem/mmap.h>
 #include <yak/mem/mem.h>
 
-#define LOG "\33\x0a\xf0mem   ::\33r"
+#define LOG LOG_COLOR0 "mem:\33r"
 
 extern multiboot_info_t *mbi;
 extern vbe_mode_info_t *mode_info;

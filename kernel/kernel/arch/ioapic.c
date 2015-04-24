@@ -3,7 +3,7 @@
 #include <yak/mem/vmm.h>
 #include <yak/arch/ioapic.h>
 
-#define LOG "\33\x0a\xf0ioapic::\33r"
+#define LOG LOG_COLOR0 "ioapic:\33r"
 
 #define MAX_IOAPICS 8 // arbitrary
 
@@ -20,12 +20,28 @@ char ioapic_mapping[PAGE_SIZE * MAX_IOAPICS] __attribute__((aligned(PAGE_SIZE)))
 typedef struct ioapic
 {
     uint8_t id;
-    uint8_t version;
     uintptr_t phys_base;
     uintptr_t virt_base;
     uint32_t int_base;
     uint8_t int_max;
 } ioapic_t;
+
+static unsigned int num_ioapics = 0;
+static ioapic_t ioapics[MAX_IOAPICS]; 
+
+typedef struct
+{
+    unsigned int gsi;
+    struct {
+        unsigned int source : 8;
+        unsigned int flags  : 16;
+    };
+} __packed int_override_t;
+
+#define MAX_INT_OVERRIDES 20 // arbitrary
+
+static unsigned int num_int_overrides = 0;
+static int_override_t int_overrides[MAX_INT_OVERRIDES];
 
 // empty bit-fields are marked as reserved in the specification
 union ioapicid {
@@ -56,26 +72,14 @@ union ioapicarb {
     uint32_t raw;
 };
 
-// destination modes
-#define PHYSICAL_MODE   0
-#define LOGICAL_MODE    1
-
-// delivery mode
-#define FIXED           0
-#define LOWEST_PRIORITY 1
-#define SMI             2
-#define NMI             4
-#define INIT            5
-#define EXTINT          7
-
 union ioredtbl {
     struct {
         uint64_t vector             : 8;
         uint64_t delivery_mode      : 3;
         uint64_t destination_mode   : 1;
-        uint64_t delivery_status    : 1;
+        uint64_t delivery_status    : 1; // read-only
         uint64_t input_pin_polarity : 1;
-        uint64_t remote_irr         : 1;
+        uint64_t remote_irr         : 1; // read-only
         uint64_t trigger_mode       : 1;
         uint64_t mask               : 1;
         uint64_t                    : 39;
@@ -86,9 +90,6 @@ union ioredtbl {
         uint32_t high;
     } __attribute__((packed));
 };
-
-static unsigned int num_ioapics = 0;
-static ioapic_t ioapics[MAX_IOAPICS]; 
 
 void ioapic_write(const uintptr_t ioapic_base, const uint8_t offset, const uint32_t val)
 {
@@ -134,7 +135,6 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
     assert(idreg.id == id);
 
     ioapics[num_ioapics].id = id;
-    ioapics[num_ioapics].version = verreg.version;
     ioapics[num_ioapics].phys_base = ioapic_base;
     ioapics[num_ioapics].virt_base = virt_base;
     ioapics[num_ioapics].int_base = int_base;
@@ -149,31 +149,90 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
     ++num_ioapics;
 }
 
-void ioapic_set_irq(const uint8_t irq, const uint64_t apic_id, const uint8_t vector)
+void ioapic_modify_irq(const uint8_t irq, const redtbl_entry_t entry)
 {
-    unsigned int i;
-    for (i = 0; i < num_ioapics; ++i)
-        if (irq >= ioapics[i].int_base && irq <= ioapics[i].int_max)
+    // check if the irq has been rerouted
+    uint8_t gsi = irq, override_found = 0;
+    uint16_t flags;
+    for (int i = 0; i < MAX_INT_OVERRIDES; ++i) {
+        if (int_overrides[i].source == irq) {
+            gsi = int_overrides[i].gsi;
+            flags = int_overrides[i].flags;
+            override_found = 1;
             break;
-    if (i == num_ioapics) {
-        printk("\33\x0f\x40<ioapic> IRQ #%u isn't mapped to the IOAPIC(s)\n", irq);
+        }
+    }
+    
+    // search the ioapic on which the irq is routed
+    unsigned int id;
+    for (id = 0; id < num_ioapics; ++id)
+        if (gsi >= ioapics[id].int_base && gsi <= ioapics[id].int_max)
+            break;
+    if (id == num_ioapics) {
+        printk("\33\x0f\x40<ioapic> IRQ #%u isn't mapped to the IOAPIC(s)\n", gsi);
         return;
     }
+    printk(LOG " mapping irq #%u (gsi #%u, ioapic #%u) to isr #%u on lapic #%u\n", 
+            irq, gsi, id, entry.vector, entry.destination);
 
-    const uint32_t low_index  = IOREDTBL + irq * 2;
-    const uint32_t high_index = IOREDTBL + irq * 2 + 1;
+    const uint32_t low_index  = IOREDTBL + gsi * 2;
+    const uint32_t high_index = IOREDTBL + gsi * 2 + 1;
 
     union ioredtbl reg;
-    reg.low = ioapic_read(ioapics[i].virt_base, low_index);
-    reg.high = ioapic_read(ioapics[i].virt_base, high_index);
+    reg.low = ioapic_read(ioapics[id].virt_base, low_index);
+    reg.high = ioapic_read(ioapics[id].virt_base, high_index);
 
-    reg.destination = apic_id;
-    reg.mask = 0;
-    reg.destination_mode = PHYSICAL_MODE;
-    reg.delivery_mode = FIXED;
-    reg.vector = vector;
+    // if there is an interrupt override, use its flags
+    if (override_found) {
+        uint8_t pol = flags & 0x03;
+        uint8_t trig = (flags >> 2) & 0x03;
 
-    ioapic_write(ioapics[i].virt_base, low_index, reg.low);
-    ioapic_write(ioapics[i].virt_base, high_index, reg.high);
+        if (pol == 0) ;
+            // conforms to the specification of the bus
+        else if (pol == 1)
+            reg.input_pin_polarity = INTPOL_HIGH;
+        else if (pol == 3)
+            reg.input_pin_polarity = INTPOL_LOW;
+
+        if (trig == 0) ;
+            // conforms to the specification of the bus
+        else if (trig == 1)
+            reg.trigger_mode = TRIGMOD_EDGE;
+        else if (trig == 3)
+            reg.trigger_mode = TRIGMOD_LEVEL;
+    }
+
+    reg.vector = entry.vector;
+    reg.delivery_mode = entry.delivery_mode;
+    reg.destination_mode = entry.destination_mode;
+    reg.mask = entry.mask;
+    reg.destination = entry.destination;
+
+    ioapic_write(ioapics[id].virt_base, low_index, reg.low);
+    ioapic_write(ioapics[id].virt_base, high_index, reg.high);
 }
 
+void ioapic_set_irq(const uint8_t irq, const uint8_t vector, const uint64_t apic_id)
+{
+    redtbl_entry_t entry = {
+        .vector = vector,
+        .delivery_mode = DELMOD_FIXED,
+        .destination_mode = DESTMOD_PHYSICAL,
+        .mask = 0,
+        .destination = apic_id
+    };
+    ioapic_modify_irq(irq, entry);
+}
+
+void ioapic_add_override(const uint8_t source, const uint32_t gsi, const uint16_t flags)
+{
+    assert(num_int_overrides < MAX_INT_OVERRIDES);
+
+    int_overrides[num_int_overrides].source = source;
+    int_overrides[num_int_overrides].gsi = gsi;
+    int_overrides[num_int_overrides].flags = flags;
+
+    printk(LOG " interrupt override: %u->%u, flags = %#04x\n", source, gsi, flags);
+
+    ++num_int_overrides;
+}

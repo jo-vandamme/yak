@@ -1,14 +1,12 @@
-#include <yak/config.h>
+#include <yak/kernel.h>
 #include <yak/initcall.h>
-#include <yak/lib/types.h>
-#include <yak/video/printk.h>
 #include <yak/mem/pmm.h>
 #include <yak/mem/vmm.h>
 #include <yak/arch/pit.h>
 #include <yak/arch/tsc.h>
 #include <yak/arch/lapic.h>
 
-#define LOG "\33\x0a\xf0lapic ::\33r"
+#define LOG LOG_COLOR0 "lapic:\33r"
 
 // Local APIC register offsets, divided by 4 for use as uint[] indices
 

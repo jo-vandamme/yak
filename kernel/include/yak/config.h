@@ -11,4 +11,6 @@
 
 #define TIMER_FREQ      1000
 
+#define LOG_COLOR0      "\33\x08\x88"
+
 #endif

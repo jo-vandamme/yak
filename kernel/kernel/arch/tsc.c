@@ -1,10 +1,9 @@
-#include <yak/lib/types.h>
+#include <yak/kernel.h>
 #include <yak/initcall.h>
-#include <yak/video/printk.h>
 #include <yak/arch/pit.h>
 #include <yak/arch/tsc.h>
 
-#define LOG "\33\x0a\xf0tsc   ::\33r"
+#define LOG LOG_COLOR0 "tsc:\33r"
 
 static uint64_t cpu_freq;
 

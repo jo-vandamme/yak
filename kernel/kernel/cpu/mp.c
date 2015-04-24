@@ -17,7 +17,7 @@
 #include <yak/cpu/percpu.h>
 #include <yak/cpu/mp.h>
 
-#define LOG "\33\x0a\xf0smp   ::\33r"
+#define LOG LOG_COLOR0 "smp:\33r"
 
 typedef struct
 {
@@ -57,6 +57,8 @@ typedef struct
     uint32_t interrupt;
     uint16_t flags;
 } __packed madt_int_override_t;
+
+#define INTR_BUS_ISA 0
 
 typedef struct
 {
@@ -305,8 +307,11 @@ INIT_CODE void mp_init1(void)
 
             case MADT_INT_SRC_OVERRIDE: ;
                 madt_int_override_t *override = (madt_int_override_t *)(record + sizeof(madt_record_t));
-                printk(LOG " ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = %#04x\n",
-                        override->bus_source, override->irq_source, override->interrupt, override->flags);
+                if (override->bus_source == INTR_BUS_ISA)
+                    ioapic_add_override(override->irq_source, override->interrupt, override->flags);
+                else 
+                    printk(LOG "\33\x0f\x40 ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = %#04x\n",
+                            override->bus_source, override->irq_source, override->interrupt, override->flags);
                 break;
 
             case MADT_LAPIC_NMI: ;

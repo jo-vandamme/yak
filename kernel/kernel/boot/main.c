@@ -1,5 +1,4 @@
 #include <yak/kernel.h>
-#include <yak/config.h>
 #include <yak/initcall.h>
 #include <yak/lib/string.h>
 #include <yak/boot/multiboot.h>
@@ -8,13 +7,14 @@
 #include <yak/cpu/idt.h>
 #include <yak/cpu/mp.h>
 #include <yak/mem/mem.h>
+#include <yak/mem/pmm.h>
 #include <yak/arch/acpi.h>
 #include <yak/arch/tsc.h>
 #include <yak/arch/pit.h>
 #include <yak/arch/lapic.h>
 #include <yak/dev/keyboard.h>
 
-#define LOG "\33\x0a\360main  ::\33r"
+#define LOG LOG_COLOR0 "main:\33r"
 
 multiboot_info_t *mbi;
 vbe_mode_info_t *mode_info;
@@ -27,18 +27,17 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     int padding = 5;
     int term_w = mode_info->res_x - padding * 2;
     int term_h = mode_info->res_y - padding * 2;
-    //term_h = 100;
     term_init(0, mode_info, padding, padding, term_w, term_h, 0xc0c0c0, 0x000000, 1);
 
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");
 
-    printk(LOG " resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
+    printk("\33\x0f\xf0Yak kernel built on " __DATE__ " " __TIME__ " with gcc-" __VERSION__ "\33r\n");
+    //printk(LOG " resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
     
-    // we should not allocate memory before mem_init()
-    // this means that some PML3...PML1 tables must be set statistically
-    // by default, we map more memory than needed, mem_init() will 
-    // then do a cleanup
+    // we should not allocate memory before mem_init(),
+    // which means that some PML3...PML1 tables must be set statistically.
+    // By default, we map more memory than needed, mem_init() will then do a cleanup
     isr_init();
     idt_init();
     tsc_init();
@@ -67,6 +66,8 @@ void kernel_main(u64_t magic, u64_t mboot)
     //lapic_send_ipi(3, 80);
 
     isr_register(0x20, func);
+
+    print_mem_stat_global();
 
     for (;;) {
         //if (kbd_lastchar() == 'q')

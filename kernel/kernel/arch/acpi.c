@@ -1,13 +1,11 @@
-#include <yak/lib/types.h>
+#include <yak/kernel.h>
 #include <yak/lib/string.h>
-#include <yak/config.h>
 #include <yak/initcall.h>
-#include <yak/video/printk.h>
 #include <yak/mem/vmm.h>
 #include <yak/mem/mem.h>
 #include <yak/arch/acpi.h>
 
-#define LOG "\33\x0a\360acpi  ::\33r"
+#define LOG LOG_COLOR0 "acpi:\33r"
 
 // Root System Description Pointer
 typedef struct
@@ -102,12 +100,10 @@ INIT_CODE uintptr_t acpi_init(void)
         printk(LOG " No ACPI support detected!\n");
         return madt;
     }
-    /*
     char oem_id[7] = { 0 };
     memcpy(oem_id, rsdp->oem_id, 6);
     printk(LOG " RSDP [%016x] - Rev: %u - OEMID: %s\n",
            ((uintptr_t)rsdp - VIRTUAL_BASE), rsdp->revision + 1, oem_id);
-           */
 
     int use_xsdt = 0;
     uintptr_t rsdt_address = (uintptr_t)rsdp->rsdt_address;
@@ -126,7 +122,6 @@ INIT_CODE uintptr_t acpi_init(void)
         printk(LOG " Bad RSDT checksum\n");
         return madt;
     }
-    /*
     char oem_table_id[9] = { 0 };
     memcpy(oem_id, rsdt->oem_id, 6);
     memcpy(oem_table_id, rsdt->oem_table_id, 8);
@@ -137,11 +132,10 @@ INIT_CODE uintptr_t acpi_init(void)
     creator_id[1] = ((cid >> 8) & 0xff);
     creator_id[0] = (cid & 0xff);
     printk(LOG " RSDT [%016x] - Rev: %u - OEMID: %s\n" \
-           "         OEM Table ID: %s - OEM Rev: %u - " \
+           LOG " OEM Table ID: %s - OEM Rev: %u - " \
            "Creator ID: %s - Creator Rev: %u\n",
            rsdt_address, rsdt->revision, oem_id, oem_table_id, 
            rsdt->oem_revision, creator_id, rsdt->creator_revision);
-    */
 
     madt = search_sdt(rsdt_address, use_xsdt, "APIC");
     if (!madt) {

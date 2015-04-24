@@ -1,8 +1,8 @@
 #ifndef __YAK_KERNEL_H__
 #define __YAK_KERNEL_H__
 
+#include <yak/config.h>
 #include <yak/lib/types.h>
-
 #include <yak/video/printk.h>
 
 #define assert(condition) \

@@ -1,5 +1,4 @@
 #include <yak/kernel.h>
-#include <yak/config.h>
 #include <yak/initcall.h>
 #include <yak/lib/string.h>
 #include <yak/lib/utils.h>
@@ -11,7 +10,7 @@
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
 
-#define LOG "\33\x0a\xf0pmm   ::\33r"
+#define LOG LOG_COLOR0 "pmm:\33r"
 
 extern multiboot_info_t *mbi;
 
@@ -172,7 +171,7 @@ static void print_mem_stat(frame_stack_t *stack)
 {
     unsigned long total_free = stack->free_frames * PAGE_SIZE;
 
-    printk(LOG " memory available: %uGiB-%uMiB-%uKiB (%u frames)\n", 
+    printk(LOG " %uGiB-%uMiB-%uKiB available (%u frames)\n", 
             byte2gb(total_free), byte2mb(total_free), byte2kb(total_free), stack->free_frames);
 }
 
@@ -199,6 +198,8 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
     frame_stack_t *stack = &global_frame_stack;
     stack_block_t *s = stack->top;
 
+    printk(LOG " initializing memory");
+
     uintptr_t mmap_stop = VMM_P2V(mbi->mmap_addr) + mbi->mmap_length;
     uintptr_t frame, last_frame;
     multiboot_mmap_entry_t *mmap = (multiboot_mmap_entry_t *)VMM_P2V(mbi->mmap_addr); 
@@ -218,7 +219,7 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
         //    byte2mb(last_frame - frame), byte2kb(last_frame - frame), 
         //    (last_frame - frame) / PAGE_SIZE);
 
-        //unsigned long i = 0;
+        unsigned long i = 0;
         for (; frame + PAGE_SIZE <= last_frame; frame += PAGE_SIZE) {
 
             if ((frame >= TRAMPOLINE_START && frame < TRAMPOLINE_END) ||
@@ -242,10 +243,11 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
                 s->frames[s->num_frames++] = frame;
             }
             ++stack->free_frames;
-            //if (++i % 50000 == 0) printk(".");
+            if (++i % 50000 == 0) printk(".");
         }
         //printk("\n");
     }
+    printk("\n");
     total_frames = global_frame_stack.free_frames;
     print_mem_stat_global();
 
