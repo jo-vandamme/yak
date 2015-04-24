@@ -1,7 +1,7 @@
 #ifndef __YAK_REGISTERS_H__
 #define __YAK_REGISTERS_H__
 
-#include <yak/lib/types.h>
+#include <yak/kernel.h>
 
 typedef struct registers 
 {
@@ -21,7 +21,7 @@ typedef struct registers
     u64_t rflags;
     u64_t rsp;
     u64_t ss;
-} __attribute__((packed)) registers_t;
+} __packed registers_t;
 
 void print_regs(registers_t *regs);
 

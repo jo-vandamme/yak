@@ -149,6 +149,12 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
     ++num_ioapics;
 }
 
+#define MPS_INTI_ACTIVE_HIGH    1
+#define MPS_INTI_ACTIVE_LOW     3
+#define MPS_INTI_TRIGGER_EDGE   1
+#define MPS_INTI_TRIGGER_LEVEL  3
+#define MPS_INTI_CONFORM        0
+
 void ioapic_modify_irq(const uint8_t irq, const redtbl_entry_t entry)
 {
     // check if the irq has been rerouted
@@ -187,18 +193,18 @@ void ioapic_modify_irq(const uint8_t irq, const redtbl_entry_t entry)
         uint8_t pol = flags & 0x03;
         uint8_t trig = (flags >> 2) & 0x03;
 
-        if (pol == 0) ;
+        if (pol == MPS_INTI_CONFORM) ;
             // conforms to the specification of the bus
-        else if (pol == 1)
+        else if (pol == MPS_INTI_ACTIVE_HIGH)
             reg.input_pin_polarity = INTPOL_HIGH;
-        else if (pol == 3)
+        else if (pol == MPS_INTI_ACTIVE_LOW)
             reg.input_pin_polarity = INTPOL_LOW;
 
-        if (trig == 0) ;
+        if (trig == MPS_INTI_CONFORM) ;
             // conforms to the specification of the bus
-        else if (trig == 1)
+        else if (trig == MPS_INTI_TRIGGER_EDGE)
             reg.trigger_mode = TRIGMOD_EDGE;
-        else if (trig == 3)
+        else if (trig == MPS_INTI_TRIGGER_LEVEL)
             reg.trigger_mode = TRIGMOD_LEVEL;
     }
 

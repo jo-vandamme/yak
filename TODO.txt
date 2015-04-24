@@ -1,31 +1,41 @@
-spinlocks
-ioapic code
-intr source override from madt
-intr source from madt
-allocate on demand for kernel allocations (use stack for local management)
-write a generic (using macros and typeof) local memory manager for AOC of arrays of structs
-remove identity mapping
-unmap unecessary zones
+spinlocks:
+    - good spinlocks with debugging info
+    - use them where appropriate
 
-get lapic base from msr, not from madt in case it doesn't exist
+cleanup:
+    - remove identity mapping
+    - unmap unecessary zones
+    - cleanup boot code
 
-pmm - use zones 
+AOC for kernel:
+    - write a simple memory manager (a stack) for managing large arrays of objects (structs)
+      this will probably use macros and typeof
 
-remove mem_init from mp_init()
-order madt entries before using them
-enumerate pci devices
-give detailed cpu info with cpuid
-cleanup boot code
-optimized memory functions (SSE)
-cmos
-rtc
-hpet
-good spinlocks
+CPUID:
+    - give detailed cpu information
+
+Interrupts:
+    - get lapic base from msr if madt doesn't exist
+    - make sure LAPIC/IOAPIC code is good
+    - interrupt priorities (TPR, lowest priority...)
+    - scheduling
+
+PMM:
+    - use zones for DMA
+
+SSE:
+    - optimized memory functions
+    - context switching (save and restore XMM registers if necessary)
+
 DMA
-gui will be a user task
-simple malloc for user tasks
+CMOS
+RTC
+HPET
 
-ps2 controller driver
-keyboard driver
-mouse driver
-basic gui
+drivers:
+    - enumerate pci devices
+    - ps2 controller driver
+    - keyboard driver
+    - mouse driver
+
+GUI

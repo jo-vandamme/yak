@@ -54,6 +54,16 @@ void func(__unused void *r)
     //    printk(".");
 }
 
+void func2(__unused void *r)
+{
+    void *from = (void *)LFB_BASE;
+    void *to = (void *)(LFB_BASE + 0x100);
+    asm volatile("movups (%0), %%xmm0\n"
+                 "movntdq %%xmm0, (%1)\n"
+                 :: "r"(from), "r"(to) : "memory");
+    printk("SSE working!\n");
+}
+
 #include <yak/cpu/interrupt.h>
 
 void kernel_main(u64_t magic, u64_t mboot)
@@ -68,6 +78,9 @@ void kernel_main(u64_t magic, u64_t mboot)
     isr_register(0x20, func);
 
     print_mem_stat_global();
+
+    isr_register(0x30, func2);
+    lapic_send_ipi(1, 0x30);
 
     for (;;) {
         //if (kbd_lastchar() == 'q')

@@ -136,6 +136,16 @@ entry:
     btsl $31, %eax
     movl %eax, %cr0
 
+    # Enable SSE
+    movl %cr0, %eax
+    btcl $1, %eax       # clear CR0.EM bit
+    btsl $0, %eax       # set CR0.MP bit
+    movl %eax, %cr0
+    movl %cr4, %eax
+    btsl $8, %eax       # set CR4.OSFXSR bit
+    btsl $9, %eax      # set CR4.OSXMMEXCPT bit
+    movl %eax, %cr4
+
     # Enter the 64-bit submode by loading a 64-bit GDT 
     lgdt gdt_ptr
     ljmp $0x08, $longmode

@@ -50,6 +50,7 @@ void *memset(void *ptr, int value, size_t n)
     return ptr;
 }
 
+// If n is too small, don't use SSE
 void *memcpy(void *restrict dst, const void *restrict src, size_t n)
 {
     /*
@@ -73,6 +74,7 @@ void *memcpy(void *restrict dst, const void *restrict src, size_t n)
                       : : "cc", "memory");
     return dst;
     */
+
     unsigned char *p = (unsigned char *)src;
     unsigned char *q = (unsigned char *)dst;
     unsigned char *end = p + n;
