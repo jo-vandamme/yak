@@ -60,45 +60,18 @@ void func(__unused void *r)
     term_set_xy(x, y);
 }
 
-void func2(__unused void *r)
-{
-    void *from = (void *)LFB_BASE;
-    void *to = (void *)(LFB_BASE + 0x100);
-    asm volatile("movups (%0), %%xmm0\n"
-                 "movntdq %%xmm0, (%1)\n"
-                 :: "r"(from), "r"(to) : "memory");
-    printk("SSE working!\n");
-}
-
 #include <yak/cpu/interrupt.h>
+#include <yak/lib/string.h>
 
-void kernel_main(u64_t magic, u64_t mboot)
+void *memcpy_simple(void *restrict dst, const void *restrict src, size_t n)
 {
-    init_system(magic, mboot);
-
-    mem_reclaim_init();
-
-    //isr_register(80, reclaim);
-    //lapic_send_ipi(3, 80);
-
-    isr_register(0x20, func);
-
-    print_mem_stat_global();
-
-    isr_register(0x30, func2);
-    lapic_send_ipi(0, 0x30);
-
-    printk("ok\n");
-    tsc_mdelay(1000);
-    printk("ok\n");
-
-    for (;;) {
-        //if (kbd_lastchar() == 'q')
-        //    kbd_reset_system();
-    }
+    char *d = (char *)dst;
+    const char *s = (const char *)src;
+    while (n--)
+        *d++ = *s++;
+    return dst;
 }
 
-/*
 // Marsaglia's xorshift generator
 static unsigned long x = 123456789, y = 362436069, z = 521288629;
 unsigned long xorshift96(void)
@@ -113,4 +86,50 @@ unsigned long xorshift96(void)
     z = t ^ x ^ y;
     return z;
 }
-*/
+
+char src[1024 * 100];
+char dst[1024 * 100];
+
+void kernel_main(u64_t magic, u64_t mboot)
+{
+    init_system(magic, mboot);
+
+    mem_reclaim_init();
+
+    //isr_register(80, reclaim);
+    //lapic_send_ipi(3, 80);
+
+    isr_register(0x20, func);
+
+    print_mem_stat_global();
+
+    unsigned count = sizeof(src);
+    unsigned loops = 1000;
+    unsigned chunk = count / loops;
+    printk("bytes to copy = %u, number of loops = %u, bytes per copy = %u\n", count, loops, chunk);
+
+    for (unsigned i = 0; i < count / sizeof(long); ++i) {
+        *(((unsigned long *)src) + i) = xorshift96();
+        *(((unsigned long *)dst) + i) = xorshift96();
+    }
+
+    void *(*tab[])(void *, const void *, size_t) = { memcpy_simple, memcpy };
+
+    for (int k = 0; k < 6; ++k) {
+        uint64_t start = read_tsc();
+        for (unsigned i = 0; i < loops; ++i)
+            (*tab[k % 2])(dst + i * chunk, src + i * chunk, chunk);
+        uint64_t delta = read_tsc() - start;
+
+        printk("elapsed cycles = %u\n", delta);// / tsc_cpu_freq());
+
+        if (memcmp(src, dst, count))
+            printk("fucked up!\n");
+    }
+
+    for (;;) {
+        //if (kbd_lastchar() == 'q')
+        //    kbd_reset_system();
+    }
+}
+

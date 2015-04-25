@@ -50,38 +50,35 @@ void *memset(void *ptr, int value, size_t n)
     return ptr;
 }
 
-// If n is too small, don't use SSE
 void *memcpy(void *restrict dst, const void *restrict src, size_t n)
 {
-    /*
-     * memcpy does not support overlapping buffers, so always do it
-     * forwards.
-     * For speedy copying, optimize the common case where both pointers
-     * and the length are word-aligned, and copy word-at-a-time instead
-     * of byte-at-a-time. Otherwise, copy by bytes.
-     */
-    /*
-    void *d = dst;
-    if (((uintptr_t)dst | (uintptr_t)src | n) & 3) {
-        __asm__ volatile("cld; rep movsb (%%esi), %%es:(%%edi)"
-                         : "+c" (n), "+S" (src), "+D" (d)
-                         : : "cc", "memory");
-        return dst;
+    char *retval = (char *)dst;
+    if (n < 8) {
+		register size_t dummy;
+		asm volatile(
+			"rep; movsb"
+			: "=&D"(dst), "=&S"(src), "=&c"(dummy)
+			: "0"(dst), "1"(src), "2"(n)
+			: "memory");
+        return retval;
     }
-    n /= 4;
-    __asm__ volatile ("cld; rep movsl (%%esi), %%es:(%%edi)"
-                      : "+c" (n), "+S" (src), "+D" (d)
-                      : : "cc", "memory");
-    return dst;
-    */
-
-    unsigned char *p = (unsigned char *)src;
-    unsigned char *q = (unsigned char *)dst;
-    unsigned char *end = p + n;
-
-    while (p != end)
-        *q++ = *p++;
-    return dst;
+	int d0, d1, d2;
+	asm volatile(
+        "rep movsq\n"
+        "testb $4, %b4\n"
+        "je 1f\n"
+        "rep movsl\n"
+		"1: testb $2, %b4\n"
+		"je 2f\n"
+		"movsw\n"
+		"2: testb $1, %b4\n"
+		"je 3f\n"
+		"movsb\n"
+		"3:"
+		: "=&c"(d0), "=&D"(d1), "=&S"(d2)
+		: "0"(n / 8), "q"(n), "1"(dst), "2"(src)
+		: "memory");
+    return retval;
 }
 
 int memcmp(const void* aptr, const void* bptr, size_t size)
