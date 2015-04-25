@@ -16,36 +16,14 @@ inline uint64_t read_tsc(void)
 
 void tsc_udelay(uint64_t us)
 {
-    uint64_t delay_count = (cpu_freq * (us > 0 ? us : 1)) / 1000000;
-    uint64_t start_count = read_tsc();
-    //printk("startc %08x%08x delayc %08x%08x\n", start_count >> 32, start_count, delay_count >> 32, delay_count);
+    uint64_t delay = (cpu_freq * (us > 0 ? us : 1)) / 1000000ull;
+    uint64_t stop = read_tsc() + delay;
 
-    uint64_t next_count, last_count, end_count;
-    const uint64_t roll_over_count = UINT64_MAX;
+    // the tsc counter wraps every 200 years on a 3GH processor
+    // so we do not check for wrap around
 
-    while (start_count >= delay_count) {
-        // wait for roll-over
-        next_count = start_count;
-        do {
-            last_count = next_count;
-            // sched here
-            next_count = read_tsc();
-        } while (next_count < last_count);
-        delay_count -= start_count;
-        start_count = roll_over_count;
-    }
-    end_count = start_count - delay_count;
-    if (end_count > 0) {
-        // wait for end_count or roll-over
-        next_count = start_count;
-        do {
-            last_count = next_count;
-            next_count = read_tsc();
-        } while ((next_count > end_count) && (next_count < last_count));
-    }
-
-    //while (read_tsc() < counter)
-    //    asm volatile("pause" : : : "memory");
+    while (read_tsc() < stop)
+        cpu_relax();
 }
 
 inline void tsc_mdelay(uint64_t ms)
@@ -61,16 +39,15 @@ inline uint64_t tsc_cpu_freq(void)
 INIT_CODE void tsc_init(void)
 {
     unsigned int ms_delay = 10;
-    uint64_t tsc_start, tsc_diff, diff_max = 0;//UINT64_MAX;
+    uint64_t tsc_start, tsc_diff, diff_max = 0;
 
     for (int i = 0; i < 5; ++i) {
         tsc_start = read_tsc();
         pit_udelay(ms_delay * 1000);
-        tsc_diff = tsc_start - read_tsc();
+        tsc_diff = read_tsc() - tsc_start;
         diff_max = tsc_diff > diff_max ? tsc_diff : diff_max;
     }
-    cpu_freq = diff_max * (1000 / ms_delay);
+    cpu_freq = diff_max * (1000u / ms_delay);
 
-    printk(LOG " detected %u.%u MHz processor\n",
-           (uint32_t)cpu_freq / 1000000, (uint8_t)(cpu_freq % 1000000));
+    printk(LOG " detected %u MHz processor\n", cpu_freq / 1000000);
 }

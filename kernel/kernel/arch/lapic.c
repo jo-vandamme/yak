@@ -129,7 +129,7 @@ static INIT_CODE unsigned long lapic_timer_calib(void)
         ticks = UINT32_MAX - lapic_read(LAPIC_TCCR);
         ticks_min = ticks < ticks_min ? ticks : ticks_min;
     }
-    return ticks_min * (1000 / ms_delay); // ticks per second
+    return ticks_min * (1000u / ms_delay); // frequency = ticks per second
 }
 
 static INIT_CODE void lapic_set_timer(const unsigned int count)
@@ -195,8 +195,7 @@ INIT_CODE void lapic_init(const uintptr_t lapic_base)
            lapic_base, ver, max_lvt, id);
 
     timer_freq = lapic_timer_calib();
-    printk(LOG " detected %u.%u MHz bus clock\n",
-           timer_freq / 1000000, (uint8_t)(timer_freq % 1000000));
+    printk(LOG " detected %u MHz bus clock\n", timer_freq / 1000000);
 
     lapic_enable(1);
     //printk(LOG " local apic initialized\n");

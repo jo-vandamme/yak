@@ -87,6 +87,18 @@ int term_bg_color(int c)
     return old_color;
 }
 
+void term_set_xy(int x, int y)
+{
+    term_surf[current_term].x = x;
+    term_surf[current_term].y = y;
+}
+
+void term_get_xy(int *x, int *y)
+{
+    *x = term_surf[current_term].x;
+    *y = term_surf[current_term].y;
+}
+
 struct surface *term_surface(void)
 {
     return &term_surf[current_term];

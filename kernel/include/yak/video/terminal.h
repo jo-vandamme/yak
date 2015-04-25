@@ -12,6 +12,8 @@ void term_puts(const char *str);
 void term_clear(void);
 int term_fg_color(int color);
 int term_bg_color(int color);
+void term_set_xy(int x, int y);
+void term_get_xy(int *x, int *y);
 struct surface *term_surface(void);
 
 #endif

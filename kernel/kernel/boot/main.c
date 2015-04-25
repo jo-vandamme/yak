@@ -50,8 +50,14 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
 
 void func(__unused void *r)
 {
-    //if (lapic_id() == 0)
-    //    printk(".");
+    if (lapic_id() != 0)
+        return;
+
+    int x, y;
+    term_get_xy(&x, &y);
+    term_set_xy(0, 600);
+    printk("%016x", read_tsc());
+    term_set_xy(x, y);
 }
 
 void func2(__unused void *r)
@@ -80,7 +86,11 @@ void kernel_main(u64_t magic, u64_t mboot)
     print_mem_stat_global();
 
     isr_register(0x30, func2);
-    lapic_send_ipi(1, 0x30);
+    lapic_send_ipi(0, 0x30);
+
+    printk("ok\n");
+    tsc_mdelay(1000);
+    printk("ok\n");
 
     for (;;) {
         //if (kbd_lastchar() == 'q')

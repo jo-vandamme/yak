@@ -1,6 +1,7 @@
 #include <yak/kernel.h>
 #include <yak/mem/pmm.h>
 #include <yak/mem/vmm.h>
+#include <yak/arch/spinlock.h>
 #include <yak/arch/ioapic.h>
 
 #define LOG LOG_COLOR0 "ioapic:\33r"
@@ -14,6 +15,8 @@
 #define IOAPICVER   0x01
 #define IOAPICARB   0x02
 #define IOREDTBL    0x10
+
+static spinlock_t lock;
 
 char ioapic_mapping[PAGE_SIZE * MAX_IOAPICS] __attribute__((aligned(PAGE_SIZE)));
 
@@ -113,12 +116,16 @@ static void ioapic_mask_irq(const uint8_t irq, const uint8_t ioapic_id)
     const uint32_t low_index  = IOREDTBL + irq * 2;
     const uint32_t high_index = IOREDTBL + irq * 2 + 1;
 
+    spin_lock(&lock);
+
     union ioredtbl reg;
     reg.low = ioapic_read(ioapics[ioapic_id].virt_base, low_index);
     reg.high = ioapic_read(ioapics[ioapic_id].virt_base, high_index);
     reg.mask = 1;
     ioapic_write(ioapics[ioapic_id].virt_base, low_index, reg.low);
     ioapic_write(ioapics[ioapic_id].virt_base, high_index, reg.high);
+
+    spin_unlock(&lock);
 }
 
 void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t int_base)
@@ -157,6 +164,8 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
 
 void ioapic_modify_irq(const uint8_t irq, const redtbl_entry_t entry)
 {
+    spin_lock(&lock);
+
     // check if the irq has been rerouted
     uint8_t gsi = irq, override_found = 0;
     uint16_t flags;
@@ -216,6 +225,8 @@ void ioapic_modify_irq(const uint8_t irq, const redtbl_entry_t entry)
 
     ioapic_write(ioapics[id].virt_base, low_index, reg.low);
     ioapic_write(ioapics[id].virt_base, high_index, reg.high);
+
+    spin_unlock(&lock);
 }
 
 void ioapic_set_irq(const uint8_t irq, const uint8_t vector, const uint64_t apic_id)

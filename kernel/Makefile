@@ -8,7 +8,8 @@ PREFIX?=/usr/local
 EXEC_PREFIX?=$(PREFIX)
 INCLUDEDIR?=$(PREFIX)/include
 
-CFLAGS:=$(CFLAGS) -ffreestanding -fbuiltin -mcmodel=kernel -Wall -Wextra -Werror -mno-red-zone -mno-mmx
+CFLAGS:=$(CFLAGS) -ffreestanding -fbuiltin -mcmodel=kernel -Wall -Wextra -Werror \
+	-mno-red-zone -mno-mmx -mno-sse -mno-sse2
 CPPFLAGS:=$(CPPFLAGS) -D__KERNEL__ -Iinclude
 LDFLAGS:=$(LDFLAGS) -z max-page-size=0x1000
 LIBS:=$(LIBS) -nostdlib -lgcc
