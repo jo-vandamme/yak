@@ -23,6 +23,7 @@ OBJS:=\
 	kernel/video/printk.o \
 	kernel/lib/string.o \
 	kernel/lib/format.o \
+	kernel/lib/rand.o \
 	kernel/lib/sort.o \
 	kernel/cpu/idt.o \
 	kernel/cpu/isr.o \

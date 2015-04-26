@@ -62,6 +62,7 @@ void func(__unused void *r)
 
 #include <yak/cpu/interrupt.h>
 #include <yak/lib/string.h>
+#include <yak/lib/rand.h>
 
 void *memcpy_0(void *restrict dst, const void *restrict src, size_t n)
 {
@@ -70,21 +71,6 @@ void *memcpy_0(void *restrict dst, const void *restrict src, size_t n)
     while (n--)
         *d++ = *s++;
     return dst;
-}
-
-// Marsaglia's xorshift generator
-static unsigned long x = 123456789, y = 362436069, z = 521288629;
-unsigned long xorshift96(void)
-{
-    unsigned long t;
-    x ^= x << 16;
-    x ^= x >> 5;
-    x ^= x << 1;
-    t = x;
-    x = y;
-    y = z;
-    z = t ^ x ^ y;
-    return z;
 }
 
 char src[1024 * 100];
@@ -109,8 +95,8 @@ void kernel_main(u64_t magic, u64_t mboot)
     printk("bytes to copy = %u, number of loops = %u, bytes per copy = %u\n", count, loops, chunk);
 
     for (unsigned i = 0; i < count / sizeof(long); ++i) {
-        *(((unsigned long *)src) + i) = xorshift96();
-        *(((unsigned long *)dst) + i) = xorshift96();
+        *(((unsigned long *)src) + i) = rand();
+        *(((unsigned long *)dst) + i) = rand();
     }
 
     void *(*tab[])(void *, const void *, size_t) = { memcpy_0, memcpy };
