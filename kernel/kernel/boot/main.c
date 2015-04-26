@@ -63,7 +63,7 @@ void func(__unused void *r)
 #include <yak/cpu/interrupt.h>
 #include <yak/lib/string.h>
 
-void *memcpy_simple(void *restrict dst, const void *restrict src, size_t n)
+void *memcpy_0(void *restrict dst, const void *restrict src, size_t n)
 {
     char *d = (char *)dst;
     const char *s = (const char *)src;
@@ -113,7 +113,7 @@ void kernel_main(u64_t magic, u64_t mboot)
         *(((unsigned long *)dst) + i) = xorshift96();
     }
 
-    void *(*tab[])(void *, const void *, size_t) = { memcpy_simple, memcpy };
+    void *(*tab[])(void *, const void *, size_t) = { memcpy_0, memcpy };
 
     for (int k = 0; k < 6; ++k) {
         uint64_t start = read_tsc();
@@ -123,8 +123,8 @@ void kernel_main(u64_t magic, u64_t mboot)
 
         printk("elapsed cycles = %u\n", delta);// / tsc_cpu_freq());
 
-        if (memcmp(src, dst, count))
-            printk("fucked up!\n");
+        //if (memcmp(src, dst, count))
+        //    printk("fucked up!\n");
     }
 
     for (;;) {

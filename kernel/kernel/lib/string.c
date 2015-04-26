@@ -43,41 +43,56 @@ int strncmp(const char *s1, const char *s2, size_t n)
 
 void *memset(void *ptr, int value, size_t n)
 {
-    asm volatile("cld; rep stosb"
-                 : "+c"(n), "+D"(ptr)
-                 : "a"(value)
-                 : "memory");
+    if (value != 0 || ((uintptr_t)ptr & 7) != 0) {
+        asm volatile ("rep stosb" :: "D"(ptr), "a"(value), "c"(n) : "memory");
+    } else {
+        unsigned char *dst = ptr;
+        size_t qwords = n / 8;
+        size_t trail_bytes = n % 8;
+
+        asm volatile ("rep stosq" : "=D"(dst) : "D"(dst), "a"(0), "c"(qwords) : "memory");
+        while (trail_bytes--)
+            *dst++ = 0;
+    }
     return ptr;
 }
 
 void *memcpy(void *restrict dst, const void *restrict src, size_t n)
 {
-    char *retval = (char *)dst;
-    if (n < 8) {
-		register size_t dummy;
-		asm volatile(
-			"rep; movsb"
-			: "=&D"(dst), "=&S"(src), "=&c"(dummy)
-			: "0"(dst), "1"(src), "2"(n)
-			: "memory");
-        return retval;
+    uintptr_t d = (uintptr_t)dst;
+    uintptr_t s = (uintptr_t)src;
+
+    if ((d & 7) != (s & 7)) {
+        asm volatile("rep movsb" : : "D"(d), "S"(s), "c"(n) : "memory");
+    } else {
+        while ((s & 7) && n) {
+            *(char *)d++ = *(char *)s++;
+            --n;
+        }
+        asm volatile ("rep movsq" : "=D"(d), "=S"(s) : "0"(d), "1"(s), "c"(n / 8) : "memory");
+        n &= 7;
+        while (n--)
+            *(char *)d++ = *(char *)s++;
     }
-	int d0, d1, d2;
-	asm volatile(
-        "rep movsq\n"
-        "testb $4, %b4\n"
-        "je 1f\n"
-        "rep movsl\n"
-		"1: testb $2, %b4\n"
-		"je 2f\n"
-		"movsw\n"
-		"2: testb $1, %b4\n"
-		"je 3f\n"
-		"movsb\n"
-		"3:"
-		: "=&c"(d0), "=&D"(d1), "=&S"(d2)
-		: "0"(n / 8), "q"(n), "1"(dst), "2"(src)
-		: "memory");
+    return dst;
+}
+
+void *memmove(void *dst, const void *src, size_t n)
+{
+    char *d = (char *)dst;
+    const char *s = (const char *)src;
+    char *retval = d;
+
+    if (n == 0 || dst == src)
+        return dst;
+
+    if (d > s + n)
+        return memcpy(d, s, n);
+    if (d + n < s)
+        return memcpy(d, s, n);
+    if (d < s)
+        return memcpy(d, s, n);
+
     return retval;
 }
 
