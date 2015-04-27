@@ -1,6 +1,18 @@
+memory:
+    - [ ] use bitmaps for pmm, memory monitoring and debuggin will be easier
+    - bitmap.h will contain code for atomic operations on bitmaps
+    - pool.h will allow the creation of arbitrary pools of objects managed with bitmaps
+    - bitops.h if necessary
+
 spinlocks:
     - good spinlocks with debugging info
     - use them where appropriate
+
+Interrupts:
+    - NMI entries from MADT
+    - interrupt priorities (TPR, lowest priority...)
+    - make sure LAPIC/IOAPIC code is good
+    - scheduling
 
 cleanup:
     - remove identity mapping
@@ -13,12 +25,6 @@ AOC for kernel:
 
 CPUID:
     - give detailed cpu information
-
-Interrupts:
-    - get lapic base from msr if madt doesn't exist
-    - make sure LAPIC/IOAPIC code is good
-    - interrupt priorities (TPR, lowest priority...)
-    - scheduling
 
 PMM:
     - use zones for DMA
