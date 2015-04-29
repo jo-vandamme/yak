@@ -103,7 +103,7 @@ void interrupt_dispatch(void *r)
                 break;
         }
     }
-    if (!stop && !node)
+    if (!stop && !node && regs->vector != IRQ(0))
         printk(LOG "\33\x0f\x40 Uncaught exception #%u\n", regs->vector);
 
     // handlers execution for exceptions and irq
