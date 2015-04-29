@@ -50,19 +50,20 @@ trampoline_32:
 
     # Set CR4 PAE and PGE
     movl %cr4, %eax
-    btsl $5, %eax        # PAE bit
-    btsl $7, %eax        # PGE bit
+    btsl $5, %eax       # PAE bit
+    btsl $7, %eax       # PGE bit
     movl %eax, %cr4
 
     # Set LM bit of EFER MSR
     movl $0xc0000080, %ecx  # EFER MSR register
     rdmsr
-    btsl $8, %eax        # LME bit
+    btsl $8, %eax       # LME bit
     wrmsr
 
-    # Set CR0 PG bit to enable paging
+    # Set CR0 PG bit to enable paging, and WP bit to enable write protect
     movl %cr0, %eax
-    btsl $31, %eax       # PG bit
+    btsl $16, %eax      # WP bit
+    btsl $31, %eax      # PG bit
     movl %eax, %cr0
 
     # Enable SSE
@@ -72,7 +73,7 @@ trampoline_32:
     movl %eax, %cr0
     movl %cr4, %eax
     btsl $8, %eax       # set CR4.OSFXSR bit
-    btsl $9, %eax      # set CR4.OSXMMEXCPT bit
+    btsl $9, %eax       # set CR4.OSXMMEXCPT bit
     movl %eax, %cr4
 
     lgdt (TRAMPOLINE_START + (gdt_ptr_64 - trampoline))

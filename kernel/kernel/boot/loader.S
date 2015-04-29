@@ -131,9 +131,10 @@ entry:
     btsl $8, %eax
     wrmsr
 
-    # Set CR0 PG bit to enable paging
+    # Set CR0 PG bit to enable paging, and WP bit to enable write protect
     movl %cr0, %eax
-    btsl $31, %eax
+    btsl $16, %eax      # WP bit
+    btsl $31, %eax      # PG bit
     movl %eax, %cr0
 
     # Enable SSE
@@ -143,7 +144,7 @@ entry:
     movl %eax, %cr0
     movl %cr4, %eax
     btsl $8, %eax       # set CR4.OSFXSR bit
-    btsl $9, %eax      # set CR4.OSXMMEXCPT bit
+    btsl $9, %eax       # set CR4.OSXMMEXCPT bit
     movl %eax, %cr4
 
     # Enter the 64-bit submode by loading a 64-bit GDT 

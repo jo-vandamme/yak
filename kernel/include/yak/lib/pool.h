@@ -8,7 +8,7 @@
         struct stack_node node; \
         type data; \
     }; \
-    static struct __object_##name __pool_##name[(size)]; \
+    static struct __object_##name __pool_##name[(size)] __attribute__((section("aod"))); \
     static stack_t __stack_##name
 
 #define POOL_INIT(name) \

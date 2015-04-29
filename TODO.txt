@@ -1,3 +1,8 @@
+Map AOD section read-only using a single zeroed-out page
+In the page fault handler, check if the address comes from the AOD region and allocate a frame and map it
+to the faulting address.
+Verify the kernel mapping, check if everything is good.
+
 Points that are primordial. Design solid interfaces and test extensively:
     - interrupts (lapic/ioapic)
     - memory management (frame allocator, virtual memory, kernel memory with AOD)
@@ -5,9 +10,7 @@ Points that are primordial. Design solid interfaces and test extensively:
     - ipc (messages, shared memory)
 
 memory:
-    - use bitmaps for pmm, memory monitoring and debuggin will be easier
     - bitmap.h will contain code for atomic operations on bitmaps
-    - pool.h will allow the creation of arbitrary pools of objects managed with bitmaps
     - bitops.h if necessary
 
 spinlocks:

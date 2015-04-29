@@ -55,13 +55,32 @@ inline isr_node_t *isr_get_list(unsigned int vector)
     return isr_lists[vector];
 }
 
+union page_fault_error
+{
+    uint32_t raw;
+    struct {
+        uint32_t present           : 1;
+        uint32_t write             : 1;
+        uint32_t user              : 1;
+        uint32_t                   : 1;
+        uint32_t instruction_fetch : 1;
+        uint32_t                   : 27;
+    };
+};
+
 static int page_fault_handler(__unused registers_t *regs)
 {
+    union page_fault_error error = { .raw = regs->error };
     uintptr_t faulting_address;
     asm volatile("movq %%cr2, %0" : "=r"(faulting_address));
-    printk("\n\33\x0f\x10page fault @ %016x", faulting_address);
 
-    return 0;
+    printk("\n\33\x0f\x10Page fault @ %016x %s %s %s %s\n", faulting_address,
+           error.present ? "[Present]" : "",
+           error.write ? "[Write]" : "",
+           error.user ? "[User]" : "",
+           error.instruction_fetch ? "[Instruction fetch]" : "");
+
+    return 1;
 }
 
 static char *exception_messages[];
@@ -70,12 +89,12 @@ void interrupt_dispatch(void *r)
 {
     int stop = 0;
     registers_t *regs = (registers_t *)r;
-    isr_node_t *node = isr_get_list(regs->int_no);
+    isr_node_t *node = isr_get_list(regs->vector);
 
     // handle exceptions
-    if (regs->int_no < IRQ(0)) {
+    if (regs->vector < IRQ(0)) {
         stop = 1;
-        switch (regs->int_no) {
+        switch (regs->vector) {
             case 14:
                 if (page_fault_handler(regs) == 0)
                     stop = 0;
@@ -85,7 +104,7 @@ void interrupt_dispatch(void *r)
         }
     }
     if (!stop && !node)
-        printk("Uncaught exception %u\n", regs->int_no);
+        printk("Uncaught exception %u\n", regs->vector);
 
     // handlers execution for exceptions and irq
     while (node) {
@@ -95,16 +114,16 @@ void interrupt_dispatch(void *r)
     }
 
     if (stop) {
-        printk("Exception #%u: %s\nError code: %#x\n", regs->int_no, 
-            exception_messages[regs->int_no] ? 
-            exception_messages[regs->int_no] : "Unknown", regs->error);
+        printk("Exception #%u: %s\nError code: %#x\n", regs->vector, 
+            exception_messages[regs->vector] ? 
+            exception_messages[regs->vector] : "Unknown", regs->error);
         print_regs(regs);
         panic("Aborting\n");
     }
 
     lapic_ack_irq();
 
-    //printk("interrupt #%u lapic #%u\n", regs->int_no, lapic_id());
+    //printk("interrupt #%u lapic #%u\n", regs->vector, lapic_id());
 }
 
 static char *exception_messages[] = {

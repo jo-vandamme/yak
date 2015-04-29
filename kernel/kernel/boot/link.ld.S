@@ -72,6 +72,13 @@ SECTIONS
         kernel_bss_end = .;
     }
 
+    .aod ALIGN(PAGE_SIZE) : AT(ADDR(.aod) - VIRTUAL_BASE)
+    {
+        kernel_aod_start = .;
+        *(.aod)
+        kernel_aod_end = .;
+    }
+
     .data.percpu ALIGN(PAGE_SIZE) : AT(ADDR(.data.percpu) - VIRTUAL_BASE)
     {
         kernel_percpu_start = .;
