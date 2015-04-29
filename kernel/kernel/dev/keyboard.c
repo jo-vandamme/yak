@@ -16,15 +16,28 @@
 #define KBD_ENC_INPUT   0x60
 #define KBD_ENC_CMD     0x60
 
-#define LSHIFT      0x2a
-#define RSHIFT      0x36
-#define CAPSLOCK    0x3a
+enum scancodes {
+    CTRL_SC         = 0x1d,
+    LSHIFT_SC       = 0x2a,
+    RSHIFT_SC       = 0x36,
+    ALT_SC          = 0x38,
+    CAPSLOCK_SC     = 0x3a,
+    META_SC         = 0x5b,
+    NUMLOCK_SC      = 0x45
+};
 
-static uint8_t last_char = 0;
-static uint8_t shift_pressed = 0;
-static uint8_t capslock = 0;
+enum special_keys_flags {
+    CTRL_KEY        = 1 << 0,
+    ALT_KEY         = 1 << 1,
+    SHIFT_KEY       = 1 << 2,
+    CAPSLOCK_KEY    = 1 << 3,
+    META_KEY        = 1 << 4,
+    NUMLOCK_KEY     = 1 << 5,
+};
+static uint16_t special_keys = 0;
 
 #define KBD_BUF_SIZE    32
+static uint8_t last_char = 0;
 static uint8_t kbd_buffer[KBD_BUF_SIZE];
 static uint8_t read_idx = 0;
 static volatile uint8_t write_idx = 0;
@@ -97,6 +110,7 @@ void kbd_reset_system(void)
     kbd_send_command(0xfe, KBD_ENC);
 }
 
+// TODO: use switch instead of if/else if/else...
 static void kbd_handler(__unused void *r)
 {
     uint8_t scancode = inb(KBD_ENC_INPUT);
@@ -104,27 +118,42 @@ static void kbd_handler(__unused void *r)
     // if the top bit of the byte is set, a key has just been released
     if (scancode & 0x80) {
         scancode &= 0x7f;
-        if (scancode == LSHIFT || scancode == RSHIFT) {
-            shift_pressed = 0;
-            if (!capslock) {
+        if (scancode == LSHIFT_SC || scancode == RSHIFT_SC) {
+            special_keys &= ~SHIFT_KEY;
+            if (!(special_keys & CAPSLOCK_KEY)) {
                 lights.caps = 0;
                 kbd_set_leds(lights.scroll, lights.num, lights.caps);
             }
+        } else if (scancode == CTRL_SC) {
+            special_keys &= ~CTRL_KEY;
         }
 
     } else { // a key has just been pressed
-        if (scancode == LSHIFT || scancode == RSHIFT) {
-            shift_pressed = 1;
+        if (scancode == LSHIFT_SC || scancode == RSHIFT_SC) {
+            special_keys |= SHIFT_KEY;
             lights.caps = 1;
             kbd_set_leds(lights.scroll, lights.num, lights.caps);
-        } else if (scancode == CAPSLOCK) {
-            capslock = !capslock;
+        } else if (scancode == CAPSLOCK_SC) {
+            special_keys ^= CAPSLOCK_KEY;
             lights.caps = !lights.caps;
             kbd_set_leds(lights.scroll, lights.num, lights.caps);
+        } else if (scancode == NUMLOCK_SC) {
+            special_keys ^= NUMLOCK_KEY;
+            lights.num = !lights.num;
+            kbd_set_leds(lights.scroll, lights.num, lights.caps);
+        } else if (scancode == CTRL_SC) {
+            special_keys |= CTRL_KEY;
         } else {
-            printk("%c", keymap_us[shift_pressed | capslock][scancode]);
+            if (scancode == 0x2e && (special_keys & CTRL_KEY)) {
+                // trigger a breakpoint exception
+                asm volatile ("int $3");
+                return;
+            }
+            int maj = (special_keys & (SHIFT_KEY | CAPSLOCK_KEY)) != 0;
+            //printk("[%08b %x %u]\n", special_keys, scancode, maj);
+            printk("%c", keymap_us[maj][scancode]);
 
-            last_char = keymap_us[shift_pressed][scancode];
+            last_char = keymap_us[maj][scancode];
             if (((write_idx + 1) % KBD_BUF_SIZE) != read_idx) {
                 kbd_buffer[write_idx] = last_char;
                 write_idx = (write_idx + 1) % KBD_BUF_SIZE;

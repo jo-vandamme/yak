@@ -6,7 +6,7 @@
 #include <yak/cpu/registers.h>
 #include <yak/cpu/interrupt.h>
 
-#define LOG "\33\x0a\xf0<isr>\33r"
+#define LOG LOG_COLOR0 "isr:\33r"
 #define ISR_POOL_SIZE 256
 
 POOL_DECLARE(isr_pool, struct isr_node, ISR_POOL_SIZE);
@@ -74,7 +74,7 @@ static int page_fault_handler(__unused registers_t *regs)
     uintptr_t faulting_address;
     asm volatile("movq %%cr2, %0" : "=r"(faulting_address));
 
-    printk("\n\33\x0f\x10Page fault @ %016x %s %s %s %s\n", faulting_address,
+    printk(LOG " Page fault @ %016x %s %s %s %s\n", faulting_address,
            error.present ? "[Present]" : "",
            error.write ? "[Write]" : "",
            error.user ? "[User]" : "",
@@ -104,7 +104,7 @@ void interrupt_dispatch(void *r)
         }
     }
     if (!stop && !node)
-        printk("Uncaught exception %u\n", regs->vector);
+        printk(LOG "\33\x0f\x40 Uncaught exception #%u\n", regs->vector);
 
     // handlers execution for exceptions and irq
     while (node) {
@@ -114,11 +114,14 @@ void interrupt_dispatch(void *r)
     }
 
     if (stop) {
-        printk("Exception #%u: %s\nError code: %#x\n", regs->vector, 
+        printk("\n\33\x0f\x10--->> PANIC <<---\33r\n" \
+               "Exception #%u: %s\nError code: %#x\n", regs->vector, 
             exception_messages[regs->vector] ? 
             exception_messages[regs->vector] : "Unknown", regs->error);
         print_regs(regs);
-        panic("Aborting\n");
+
+        asm volatile("cli");
+        for (;;) { };
     }
 
     lapic_ack_irq();
