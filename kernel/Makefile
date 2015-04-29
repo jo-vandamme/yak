@@ -28,6 +28,7 @@ OBJS:=\
 	kernel/lib/stack.o \
 	kernel/cpu/idt.o \
 	kernel/cpu/isr.o \
+	kernel/cpu/registers.o \
 	kernel/cpu/interrupt.o \
 	kernel/cpu/percpu.o \
 	kernel/cpu/mp.o \

@@ -5,22 +5,22 @@
 
 typedef struct registers 
 {
-    u64_t r11;
-    u64_t r10;
-    u64_t r9;
-    u64_t r8;
-    u64_t rsi;
-    u64_t rdi;
-    u64_t rdx;
-    u64_t rcx;
-    u64_t rax;
-    u64_t int_no;
-    u64_t error;
-    u64_t rip;
-    u64_t cs;
-    u64_t rflags;
-    u64_t rsp;
-    u64_t ss;
+    uint64_t r11;
+    uint64_t r10;
+    uint64_t r9;
+    uint64_t r8;
+    uint64_t rsi;
+    uint64_t rdi;
+    uint64_t rdx;
+    uint64_t rcx;
+    uint64_t rax;
+    uint64_t int_no;
+    uint64_t error;
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
 } __packed registers_t;
 
 void print_regs(registers_t *regs);

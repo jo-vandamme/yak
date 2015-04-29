@@ -7,6 +7,8 @@
 #define PAGE_SIZE       0x1000
 #define STACK_SIZE      0x4000
 
+#define SYSCALL_VECTOR  128
+
 #define NUM_TERM        5
 
 #define TIMER_FREQ      1000

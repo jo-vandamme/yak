@@ -11,7 +11,7 @@ typedef struct
     uint64_t base;
 } __attribute__((packed)) idt_ptr_t;
 
-void isr_init(void);
+void isr_stubs_init(void);
 void idt_init(void);
 
 #endif

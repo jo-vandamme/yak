@@ -6,6 +6,7 @@
 #include <yak/video/terminal.h>
 #include <yak/cpu/idt.h>
 #include <yak/cpu/mp.h>
+#include <yak/cpu/interrupt.h>
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
 #include <yak/arch/acpi.h>
@@ -44,7 +45,8 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     // we should not allocate memory before mem_init(),
     // which means that some PML3...PML1 tables must be set statistically.
     // By default, we map more memory than needed, mem_init() will then do a cleanup
-    isr_init();
+    isr_stubs_init();
+    isr_handlers_init();
     idt_init();
     tsc_init();
     uintptr_t madt = acpi_init();
@@ -65,7 +67,6 @@ void func(__unused void *r)
     term_set_xy(x, y);
 }
 
-#include <yak/cpu/interrupt.h>
 #include <yak/lib/pool.h>
 
 struct mystruct {
@@ -81,11 +82,20 @@ void pool_func(__unused void *r)
 {
     struct mystruct *m0 = POOL_ALLOC(mypool);
     struct mystruct *m1 = POOL_ALLOC(mypool);
+    struct mystruct *m2 = POOL_ALLOC(mypool);
+    struct mystruct *m3 = POOL_ALLOC(mypool);
 
-    printk("%p %p\n", m0, m1);
+    printk("%p %p %p %p\n", m0, m1, m2, m3);
 
     POOL_FREE(mypool, m0);
     POOL_FREE(mypool, m1);
+
+    m0 = POOL_ALLOC(mypool);
+    m1 = POOL_ALLOC(mypool);
+    struct mystruct *m4 = POOL_ALLOC(mypool);
+    struct mystruct *m5 = POOL_ALLOC(mypool);
+
+    printk("%p %p %p %p\n", m0, m1, m4, m5);
 }
 
 void kernel_main(u64_t magic, u64_t mboot)
@@ -100,8 +110,10 @@ void kernel_main(u64_t magic, u64_t mboot)
     //lapic_send_ipi(3, 80);
 
     isr_register(0x20, func);
-    isr_register(0x20, pool_func);
     print_mem_stat_global();
+
+    isr_register(60, pool_func);
+    lapic_send_ipi(0, 60);
 
     for (;;) {
         //if (kbd_lastchar() == 'q')

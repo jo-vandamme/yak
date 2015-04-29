@@ -1,6 +1,6 @@
-#include <yak/config.h>
+#include <yak/kernel.h>
 #include <yak/initcall.h>
-#include <yak/video/printk.h>
+#include <yak/lib/pool.h>
 #include <yak/arch/lapic.h>
 #include <yak/cpu/idt.h>
 #include <yak/cpu/registers.h>
@@ -9,38 +9,18 @@
 #define LOG "\33\x0a\xf0<isr>\33r"
 #define ISR_POOL_SIZE 256
 
-typedef struct isr_node isr_node_t;
-
-struct isr_node
-{
-    isr_t isr;
-    isr_node_t *next;
-};
+POOL_DECLARE(isr_pool, struct isr_node, ISR_POOL_SIZE);
 
 static isr_node_t *isr_lists[IDT_NUM_ENTRIES];
-static isr_node_t isr_pool[ISR_POOL_SIZE];
-static isr_node_t *isr_stack;
 
-static inline isr_node_t *alloc_node(void)
+INIT_CODE void isr_handlers_init(void)
 {
-    isr_node_t *node = isr_stack;
-    if (!node)
-        panic(LOG "ISR pool is full\n");
-    isr_stack = node->next;
-    return node;
-}
-
-static inline void free_node(isr_node_t *node)
-{
-    if (node) {
-        node->next = isr_stack;
-        isr_stack = node;
-    }
+    POOL_INIT(isr_pool);
 }
 
 void isr_register(const uint8_t vector, const isr_t isr)
 {
-    isr_node_t *new_node = alloc_node();
+    isr_node_t *new_node = POOL_ALLOC(isr_pool);
     new_node->isr = isr;
     new_node->next = 0;
 
@@ -49,6 +29,7 @@ void isr_register(const uint8_t vector, const isr_t isr)
         isr_lists[vector] = new_node;
         return;
     }
+    // append the new node at the end
     while (node->next)
         node = node->next;
     node->next = new_node;
@@ -61,7 +42,7 @@ void isr_unregister(const uint8_t vector, const isr_t isr)
     do {
         if (node->isr == isr) {
             prev->next = node->next;
-            free_node(node);
+            POOL_FREE(isr_pool, node);
             break;
         }
         prev = node;
@@ -69,50 +50,56 @@ void isr_unregister(const uint8_t vector, const isr_t isr)
     } while (node);
 }
 
-INIT_CODE void isr_handlers_init(void)
+inline isr_node_t *isr_get_list(unsigned int vector)
 {
-    isr_stack = &isr_pool[0];
-    isr_node_t *node = isr_stack;
-    for (unsigned int i = 0; i < ISR_POOL_SIZE; ++i) {
-        node->next = &isr_pool[i];
-        node = node->next;
-    }
+    return isr_lists[vector];
+}
+
+static int page_fault_handler(__unused registers_t *regs)
+{
+    uintptr_t faulting_address;
+    asm volatile("movq %%cr2, %0" : "=r"(faulting_address));
+    printk("\n\33\x0f\x10page fault @ %016x", faulting_address);
+
+    return 0;
 }
 
 static char *exception_messages[];
 
-void fault_handler(registers_t *regs)
-{
-    if (regs->int_no == 14) {
-        uintptr_t faulting_address;
-        asm volatile("movq %%cr2, %0" : "=r"(faulting_address));
-        printk("\n\33\x0f\x10page fault @ %08x%08x", faulting_address >> 32, faulting_address);
-    }
-    panic("Exception #%u: %s\nError code: 0x%x\n" \
-          "rip: 0x%08x%08x\nrsp: 0x%08x%08x\n" \
-          "rfl: 0x%08x%08x\ncs: 0x%04x ss: 0x%04x\n",
-          regs->int_no,
-          exception_messages[regs->int_no] ? 
-          exception_messages[regs->int_no] : "Unknown", regs->error,
-          regs->rip >> 32, regs->rip, 
-          regs->rsp >> 32, regs->rsp,
-          regs->rflags >> 32, regs->rflags, 
-          regs->cs, regs->ss);
-}
-
 void interrupt_dispatch(void *r)
 {
+    int stop = 0;
     registers_t *regs = (registers_t *)r;
-    if (regs->int_no < IRQ(0)) {
-        fault_handler(regs);
-    }
+    isr_node_t *node = isr_get_list(regs->int_no);
 
-    // call the list of handlers
-    isr_node_t *node = isr_lists[regs->int_no];
+    // handle exceptions
+    if (regs->int_no < IRQ(0)) {
+        stop = 1;
+        switch (regs->int_no) {
+            case 14:
+                if (page_fault_handler(regs) == 0)
+                    stop = 0;
+                break;
+            default:
+                break;
+        }
+    }
+    if (!stop && !node)
+        printk("Uncaught exception %u\n", regs->int_no);
+
+    // handlers execution for exceptions and irq
     while (node) {
         if (node->isr)
             node->isr(regs);
         node = node->next;
+    }
+
+    if (stop) {
+        printk("Exception #%u: %s\nError code: %#x\n", regs->int_no, 
+            exception_messages[regs->int_no] ? 
+            exception_messages[regs->int_no] : "Unknown", regs->error);
+        print_regs(regs);
+        panic("Aborting\n");
     }
 
     lapic_ack_irq();

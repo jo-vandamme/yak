@@ -1,7 +1,5 @@
+#include <yak/kernel.h>
 #include <yak/initcall.h>
-#include <yak/lib/types.h>
-//#include <yak/video/printk.h>
-#include <yak/cpu/interrupt.h>
 #include <yak/cpu/gdt.h>
 #include <yak/cpu/idt.h>
 
@@ -45,15 +43,13 @@ INIT_CODE void idt_init(void)
     //printk("\33\x0a\xf0<idt>\33r idt installed\n");
 }
 
-INIT_CODE void isr_init(void)
+INIT_CODE void isr_stubs_init(void)
 {
     for (int i = 0; i < IDT_NUM_ENTRIES; ++i) {
         uint64_t isr = *((uint64_t *)idt + i * 2);
         idt_set_gate(&idt[i], isr, IDT_PRESENT | IDT_TYPE_32_TRAP, SEG_KCODE << 3);
     }
-    idt[128].flags |= IDT_RING3;
-
-    isr_handlers_init();
+    idt[SYSCALL_VECTOR].flags |= IDT_RING3;
 
     //printk("\33\x0a\xf0<isr>\33r interrupt service routines installed\n");
 }
