@@ -19,10 +19,16 @@
 multiboot_info_t *mbi;
 vbe_mode_info_t *mode_info;
 
+static unsigned int width;
+static unsigned int height;
+
 INIT_CODE void init_system(u64_t magic, u64_t mboot)
 {
     mbi = (multiboot_info_t *)((u64_t)mboot + VIRTUAL_BASE);
     mode_info = (vbe_mode_info_t *)(mbi->vbe_mode_info + VIRTUAL_BASE);
+
+    width = mode_info->res_x;
+    height = mode_info->res_y;
 
     int padding = 5;
     int term_w = mode_info->res_x - padding * 2;
@@ -33,7 +39,7 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
         panic("Bad multiboot magic value\n");
 
     printk("\33\x0f\xf0Yak kernel built on " __DATE__ " " __TIME__ " with gcc-" __VERSION__ "\33r\n");
-    //printk(LOG " resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
+    printk(LOG " resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
     
     // we should not allocate memory before mem_init(),
     // which means that some PML3...PML1 tables must be set statistically.
@@ -52,7 +58,6 @@ void func(__unused void *r)
 {
     if (lapic_id() != 0)
         return;
-
     int x, y;
     term_get_xy(&x, &y);
     term_set_xy(0, 600);
@@ -61,20 +66,27 @@ void func(__unused void *r)
 }
 
 #include <yak/cpu/interrupt.h>
-#include <yak/lib/string.h>
-#include <yak/lib/rand.h>
+#include <yak/lib/pool.h>
 
-void *memcpy_0(void *restrict dst, const void *restrict src, size_t n)
+struct mystruct {
+    int a;
+    int b;
+    int c;
+    int d;
+};
+
+POOL_DECLARE(mypool, struct mystruct, 1000);
+
+void pool_func(__unused void *r)
 {
-    char *d = (char *)dst;
-    const char *s = (const char *)src;
-    while (n--)
-        *d++ = *s++;
-    return dst;
-}
+    struct mystruct *m0 = POOL_ALLOC(mypool);
+    struct mystruct *m1 = POOL_ALLOC(mypool);
 
-char src[1024 * 100];
-char dst[1024 * 100];
+    printk("%p %p\n", m0, m1);
+
+    POOL_FREE(mypool, m0);
+    POOL_FREE(mypool, m1);
+}
 
 void kernel_main(u64_t magic, u64_t mboot)
 {
@@ -82,36 +94,14 @@ void kernel_main(u64_t magic, u64_t mboot)
 
     mem_reclaim_init();
 
+    POOL_INIT(mypool);
+
     //isr_register(80, reclaim);
     //lapic_send_ipi(3, 80);
 
     isr_register(0x20, func);
-
+    isr_register(0x20, pool_func);
     print_mem_stat_global();
-
-    unsigned count = sizeof(src);
-    unsigned loops = 1000;
-    unsigned chunk = count / loops;
-    printk("bytes to copy = %u, number of loops = %u, bytes per copy = %u\n", count, loops, chunk);
-
-    for (unsigned i = 0; i < count / sizeof(long); ++i) {
-        *(((unsigned long *)src) + i) = rand();
-        *(((unsigned long *)dst) + i) = rand();
-    }
-
-    void *(*tab[])(void *, const void *, size_t) = { memcpy_0, memcpy };
-
-    for (int k = 0; k < 6; ++k) {
-        uint64_t start = read_tsc();
-        for (unsigned i = 0; i < loops; ++i)
-            (*tab[k % 2])(dst + i * chunk, src + i * chunk, chunk);
-        uint64_t delta = read_tsc() - start;
-
-        printk("elapsed cycles = %u\n", delta);// / tsc_cpu_freq());
-
-        //if (memcmp(src, dst, count))
-        //    printk("fucked up!\n");
-    }
 
     for (;;) {
         //if (kbd_lastchar() == 'q')

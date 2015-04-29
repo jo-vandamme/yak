@@ -25,6 +25,7 @@ OBJS:=\
 	kernel/lib/format.o \
 	kernel/lib/rand.o \
 	kernel/lib/sort.o \
+	kernel/lib/stack.o \
 	kernel/cpu/idt.o \
 	kernel/cpu/isr.o \
 	kernel/cpu/interrupt.o \

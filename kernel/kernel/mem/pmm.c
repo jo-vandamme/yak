@@ -14,6 +14,11 @@
 
 extern multiboot_info_t *mbi;
 
+// Thoughts:
+// instead of giving each core a local stack, is it possible to use a single stack
+// for all processors and to modify/read it with atomic operations instead ?
+
+// The memory is managed as a free block chain
 // This structure is present at the beginning of every
 // free frame used as a backing store for free frames pointers
 // I call it a stack block - all addresses are physical

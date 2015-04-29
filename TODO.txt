@@ -1,5 +1,11 @@
+Points that are primordial. Design solid interfaces and test extensively:
+    - interrupts (lapic/ioapic)
+    - memory management (frame allocator, virtual memory, kernel memory with AOD)
+    - scheduling
+    - ipc (messages, shared memory)
+
 memory:
-    - [ ] use bitmaps for pmm, memory monitoring and debuggin will be easier
+    - use bitmaps for pmm, memory monitoring and debuggin will be easier
     - bitmap.h will contain code for atomic operations on bitmaps
     - pool.h will allow the creation of arbitrary pools of objects managed with bitmaps
     - bitops.h if necessary
@@ -19,7 +25,7 @@ cleanup:
     - unmap unecessary zones
     - cleanup boot code
 
-AOC for kernel:
+AOD for kernel:
     - write a simple memory manager (a stack) for managing large arrays of objects (structs)
       this will probably use macros and typeof
 
