@@ -65,7 +65,7 @@ static void putch(struct surface *surf, char c)
 
 static void clear(struct surface *surf)
 {
-    uint64_t *ptr = (uint64_t *)surf->backbuffer + surf->ox + surf->oy * surf->fb_w;
+    uint32_t *ptr = (uint32_t *)surf->backbuffer + surf->ox + surf->oy * surf->fb_w;
 
     for (uint32_t h = 0; h < surf->h; ++h) {
         for (uint32_t w = 0; w < surf->w; ++w, ++ptr)

@@ -32,6 +32,8 @@ void term_init(int term, vbe_mode_info_t *mode_info,
 
     if ((bg_color & 0x00ffffff) != 0)
         term_surf[term].rend->clear(&term_surf[term]);
+
+    current_term = term;
 }
 
 int term_set_current(int term)

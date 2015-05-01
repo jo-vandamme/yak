@@ -31,15 +31,23 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     width = mode_info->res_x;
     height = mode_info->res_y;
 
-    int padding = 5;
-    int term_w = mode_info->res_x - padding * 2;
-    int term_h = mode_info->res_y - padding * 2;
-    term_init(0, mode_info, padding, padding, term_w, term_h, 0xc0c0c0, 0x000000, 1);
+    int gap = 110;
+    int margin = 10;
+    term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, gap, 0xd0d0d0, 0x000000, 0);
+    printk("\33\x03\xfa##    ##    ###    ##    ## \n" \
+           "\33\x03\xfa ##  ##    ## ##   ##   ##  \n" \
+           "\33\x03\xfa  ####    ##   ##  ##  ##   \n" \
+           "\33\x03\xfa   ##    ##     ## #####    \33\x03\xddKernel built on " __DATE__ " " __TIME__ " with gcc-" __VERSION__ "\n" \
+           "\33\x03\xfa   ##    ######### ##  ##   \33\x03\xdd      Copyright (c) Jonathan Vandamme 2015\n" \
+           "\33\x03\xfa   ##    ##     ## ##   ##  \n" \
+           "\33\x03\xfa   ##    ##     ## ##    ## \33r");
+
+    term_init(1, mode_info, margin, gap + 2*margin, 
+            mode_info->res_x - 2*margin, mode_info->res_y - 3*margin - gap, 0xd0d0d0, 0x000000, 1);
 
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");
 
-    printk("\33\x0f\xf0Yak kernel built on " __DATE__ " " __TIME__ " with gcc-" __VERSION__ "\33r\n");
     printk(LOG " resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
     
     // we should not allocate memory before mem_init(),
@@ -62,7 +70,7 @@ void func(__unused void *r)
         return;
     int x, y;
     term_get_xy(&x, &y);
-    term_set_xy(0, 600);
+    term_set_xy(0, 500);
     printk("%016x", read_tsc());
     term_set_xy(x, y);
 }

@@ -1,7 +1,9 @@
-Map AOD section read-only using a single zeroed-out page
+- Map AOD section read-only using a single zeroed-out page
 In the page fault handler, check if the address comes from the AOD region and allocate a frame and map it
 to the faulting address.
-Verify the kernel mapping, check if everything is good.
+- Verify the kernel mapping, check if everything is good.
+- PMM: can i use atomic operations instead of having a small stack per-cpu ?
+- Do the percpu areas need to be consecutive ? if not, the memory can be initialized earlier and the percpu areas created from alloc_frame() and then mapped
 
 Points that are primordial. Design solid interfaces and test extensively:
     - interrupts (lapic/ioapic)
