@@ -2,6 +2,7 @@
 #include <yak/initcall.h>
 #include <yak/lib/pool.h>
 #include <yak/arch/lapic.h>
+#include <yak/video/terminal.h>
 #include <yak/cpu/idt.h>
 #include <yak/cpu/registers.h>
 #include <yak/cpu/interrupt.h>
@@ -114,6 +115,7 @@ void interrupt_dispatch(void *r)
     }
 
     if (stop) {
+        term_fg_color(0xffffff);
         printk("\n\33\x0f\x10--->> PANIC <<---\33r\n" \
                "Exception #%u: %s\nError code: %#x\n", regs->vector, 
             exception_messages[regs->vector] ? 

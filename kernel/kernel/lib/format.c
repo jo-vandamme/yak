@@ -39,8 +39,8 @@ static char *num2str(char *str, unsigned long long num, unsigned radix, int widt
     if (sign)
         --width;
 
-    if (type & SPECIAL)
-        width = (radix == 16 || radix == 2) ? (width - 2) : ((radix == 8) ? (width - 1) : width);
+    //if (type & SPECIAL)
+    //    width = (radix == 16 || radix == 2) ? (width - 2) : ((radix == 8) ? (width - 1) : width);
 
     int i = 0;
     if (num == 0)

@@ -70,7 +70,7 @@ void func(__unused void *r)
         return;
     int x, y;
     term_get_xy(&x, &y);
-    term_set_xy(0, 500);
+    term_set_xy(width - 200, 0);
     printk("%016x", read_tsc());
     term_set_xy(x, y);
 }
@@ -111,21 +111,22 @@ void kernel_main(u64_t magic, u64_t mboot)
     init_system(magic, mboot);
 
     mem_reclaim_init();
+    print_mem_stat_global();
+    printk("\33\x08\x88--------------- INIT DONE ---------------\n\n");
+
+    // kernel initialized - load ramdisk
+    // and start init process here
+
+    term_fg_color(0xffffff);
+    isr_register(0x20, func);
 
     POOL_INIT(mypool);
-
-    //isr_register(80, reclaim);
-    //lapic_send_ipi(3, 80);
-
-    isr_register(0x20, func);
-    print_mem_stat_global();
-
     isr_register(60, pool_func);
     lapic_send_ipi(0, 60);
 
     for (;;) {
-        //if (kbd_lastchar() == 'q')
-        //    kbd_reset_system();
+        if (kbd_lastchar() == 'q')
+            kbd_reset_system();
     }
 }
 

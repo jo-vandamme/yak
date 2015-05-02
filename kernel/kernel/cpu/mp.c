@@ -316,7 +316,7 @@ INIT_CODE void mp_init1(void)
 
             case MADT_LAPIC_NMI: ;
                 madt_lapic_nmi_t *lapic_nmi = (madt_lapic_nmi_t *)(record + sizeof(madt_record_t));
-                printk(LOG " \33\x0f\x40ignoring LAPIC NMI: acpi proc id = %u, flags = %04x, lapic LINTn = %u\n",
+                printk(LOG "\33\x0f\x40 ignoring LAPIC NMI: acpi proc id = %u, flags = %04x, lapic LINTn = %u\n",
                         lapic_nmi->acpi_proc_id, lapic_nmi->flags, lapic_nmi->lapic_lintn);
                 break;
 
