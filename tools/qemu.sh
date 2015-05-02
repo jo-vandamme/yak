@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo qemu-system-x86_64 \
+qemu-system-x86_64 \
     -hda disk.img \
     -m 128M \
     -smp 8 \

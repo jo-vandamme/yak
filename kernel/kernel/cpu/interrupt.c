@@ -116,8 +116,8 @@ void interrupt_dispatch(void *r)
 
     if (stop) {
         term_fg_color(0xffffff);
-        printk("\n\33\x0f\x10--->> PANIC <<---\33r\n" \
-               "Exception #%u: %s\nError code: %#x\n", regs->vector, 
+        printk("\n\33\x0f\x10\t\t----------->> PANIC <<-----------\33r\n" \
+               "\tException #%u: %s - Error code: %#x\n", regs->vector, 
             exception_messages[regs->vector] ? 
             exception_messages[regs->vector] : "Unknown", regs->error);
         print_regs(regs);

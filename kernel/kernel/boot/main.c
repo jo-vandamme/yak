@@ -34,13 +34,13 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     int gap = 110;
     int margin = 10;
     term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, gap, 0xd0d0d0, 0x000000, 0);
-    printk("\33\x03\xfa##    ##    ###    ##    ## \n" \
-           "\33\x03\xfa ##  ##    ## ##   ##   ##  \n" \
-           "\33\x03\xfa  ####    ##   ##  ##  ##   \n" \
-           "\33\x03\xfa   ##    ##     ## #####    \33\x03\xddKernel built on " __DATE__ " " __TIME__ " with gcc-" __VERSION__ "\n" \
-           "\33\x03\xfa   ##    ######### ##  ##   \33\x03\xdd      Copyright (c) Jonathan Vandamme 2015\n" \
-           "\33\x03\xfa   ##    ##     ## ##   ##  \n" \
-           "\33\x03\xfa   ##    ##     ## ##    ## \33r");
+    printk("\33\x03\xfa##    ##  ###    ##    ## \n" \
+           "\33\x03\xfa ##  ##  ## ##   ##   ##  \n" \
+           "\33\x03\xfa  ####  ##   ##  ##  ##   \n" \
+           "\33\x03\xfa   ##  ##     ## #####    \33\x03\xddKernel built on " __DATE__ " " __TIME__ " with gcc-" __VERSION__ "\n" \
+           "\33\x03\xfa   ##  ######### ##  ##   \33\x03\xdd      Copyright (c) Jonathan Vandamme 2015\n" \
+           "\33\x03\xfa   ##  ##     ## ##   ##  \n" \
+           "\33\x03\xfa   ##  ##     ## ##    ## \33r");
 
     term_init(1, mode_info, margin, gap + 2*margin, 
             mode_info->res_x - 2*margin, mode_info->res_y - 3*margin - gap, 0xd0d0d0, 0x000000, 1);

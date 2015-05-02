@@ -98,6 +98,7 @@ trampoline_64:
     movq (TRAMPOLINE_PARAMS + ID_OFFSET), %rdi
     movq (TRAMPOLINE_PARAMS + PERCPU_OFFSET), %rsi
 
+    movq $0, %rbp
     movq $ap_main, %rax
     jmpq *%rax
 

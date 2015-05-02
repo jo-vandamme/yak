@@ -174,6 +174,7 @@ longmode:
     # load a GDT located in high memory
     lgdt gdt_ptr_high
 
+    movq $0, %rbp
 	movq $kernel_main, %rcx
     jmpq *%rcx
 
