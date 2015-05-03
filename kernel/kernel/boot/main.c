@@ -35,7 +35,7 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
            "\33\x03\xfa ##  ##  ## ##   ##   ##  \n" \
            "\33\x03\xfa  ####  ##   ##  ##  ##   \33\x03\xdd Kernel build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
            "\33\x03\xfa   ##  ##     ## #####    \33\x03\xdd Copyright 2015-2016: Jonathan Vandamme. All rights reserved.\n" \
-           "\33\x03\xfa   ##  ######### ##  ##   \33\x03\xdd Kernel available under the Creative Commons (CC BY-ND) license.\n" \
+           "\33\x03\xfa   ##  ######### ##  ##   \33\x03\xdd Kernel available under the Creative Commons Attribution license (CC BY).\n" \
            "\33\x03\xfa   ##  ##     ## ##   ##  \n" \
            "\33\x03\xfa   ##  ##     ## ##    ## \33r", &KERN_BNUM);
 

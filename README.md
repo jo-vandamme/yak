@@ -10,4 +10,4 @@ License
 -------
 
 Copyright(C) Jonathan Vandamme 2015
-The code is licensed under the Creative Commons Attribution-NoDerivs (CC BY-ND) license.
+The code is licensed under the Creative Commons Attribution (CC BY) license.
