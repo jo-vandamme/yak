@@ -55,6 +55,7 @@ INIT_CODE void mem_reloc_boot_structs(void)
         ptr = alloc_early(sizeof(vbe_mode_info_t), 4);
         memcpy((void *)ptr, (void *)((uintptr_t)mbi->vbe_mode_info), sizeof(vbe_mode_info_t));
         mbi->vbe_mode_info = VMM_V2P(ptr);
+        mode_info = (vbe_mode_info_t *)ptr;
     }
 
     if (mbi->flags & MBOOT_MMAP) {

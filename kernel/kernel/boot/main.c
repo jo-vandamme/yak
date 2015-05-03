@@ -9,6 +9,7 @@
 #include <yak/cpu/interrupt.h>
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
+#include <yak/mem/vmm.h>
 #include <yak/arch/acpi.h>
 #include <yak/arch/tsc.h>
 #include <yak/arch/pit.h>
@@ -20,27 +21,23 @@
 multiboot_info_t *mbi;
 vbe_mode_info_t *mode_info;
 
-static unsigned int width;
-static unsigned int height;
+extern unsigned int KERN_BNUM;
 
 INIT_CODE void init_system(u64_t magic, u64_t mboot)
 {
     mbi = (multiboot_info_t *)((u64_t)mboot + VIRTUAL_BASE);
     mode_info = (vbe_mode_info_t *)(mbi->vbe_mode_info + VIRTUAL_BASE);
 
-    width = mode_info->res_x;
-    height = mode_info->res_y;
-
     int gap = 110;
     int margin = 10;
     term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, gap, 0xd0d0d0, 0x000000, 0);
     printk("\33\x03\xfa##    ##  ###    ##    ## \n" \
            "\33\x03\xfa ##  ##  ## ##   ##   ##  \n" \
-           "\33\x03\xfa  ####  ##   ##  ##  ##   \n" \
-           "\33\x03\xfa   ##  ##     ## #####    \33\x03\xddKernel built on " __DATE__ " " __TIME__ " with gcc-" __VERSION__ "\n" \
-           "\33\x03\xfa   ##  ######### ##  ##   \33\x03\xdd      Copyright (c) Jonathan Vandamme 2015\n" \
+           "\33\x03\xfa  ####  ##   ##  ##  ##   \33\x03\xdd Kernel build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
+           "\33\x03\xfa   ##  ##     ## #####    \33\x03\xdd Copyright 2015-2016: Jonathan Vandamme. All rights reserved.\n" \
+           "\33\x03\xfa   ##  ######### ##  ##   \33\x03\xdd Kernel available under the Creative Commons (CC BY-ND) license.\n" \
            "\33\x03\xfa   ##  ##     ## ##   ##  \n" \
-           "\33\x03\xfa   ##  ##     ## ##    ## \33r");
+           "\33\x03\xfa   ##  ##     ## ##    ## \33r", &KERN_BNUM);
 
     term_init(1, mode_info, margin, gap + 2*margin, 
             mode_info->res_x - 2*margin, mode_info->res_y - 3*margin - gap, 0xd0d0d0, 0x000000, 1);
@@ -70,7 +67,7 @@ void func(__unused void *r)
         return;
     int x, y;
     term_get_xy(&x, &y);
-    term_set_xy(width - 200, 0);
+    term_set_xy(mode_info->res_x - 200, 0);
     printk("%016x", read_tsc());
     term_set_xy(x, y);
 }

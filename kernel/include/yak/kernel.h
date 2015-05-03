@@ -13,6 +13,10 @@
 #define __packed __attribute__((packed))
 #define __unused __attribute__((unused))
 
+// tell gcc how to optimize branches
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 typedef uint32_t flags_t;
 
 static inline void mem_barrier(void)

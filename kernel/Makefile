@@ -11,7 +11,7 @@ INCLUDEDIR?=$(PREFIX)/include
 CFLAGS:=$(CFLAGS) -ffreestanding -fbuiltin -mcmodel=kernel -Wall -Wextra -Werror \
 	-mno-red-zone -mno-mmx -mno-sse -mno-sse2 -fno-omit-frame-pointer
 CPPFLAGS:=$(CPPFLAGS) -D__KERNEL__ -Iinclude
-LDFLAGS:=$(LDFLAGS) -z max-page-size=0x1000
+LDFLAGS:=$(LDFLAGS) -z max-page-size=0x1000 -Xlinker --defsym -Xlinker KERN_BNUM=$$(cat build.num)
 LIBS:=$(LIBS) -nostdlib -lgcc
 
 OBJS:=\
@@ -52,6 +52,16 @@ all: yak.elf
 yak.elf: $(OBJS) kernel/boot/link.ld
 	@echo "[LD]\t$@"
 	@$(CC) -T kernel/boot/link.ld -o $@ $(CFLAGS) $(OBJS) $(LDFLAGS) $(LIBS)
+
+	@$(OBJDUMP) -b elf64-x86-64 -S -d yak.elf > yak.txt
+	@$(OBJCOPY) -I elf64-x86-64 --only-keep-debug yak.elf yal.sym
+	@$(OBJCOPY) -I elf64-x86-64 --strip-debug yak.elf
+
+kernel/boot/main.o: kernel/boot/main.c
+	@if ! test -f build.num; then echo 0 > build.num; fi
+	@echo $$(($$(cat build.num) + 1)) > build.num
+	@echo "[CC]\t$@"
+	@$(CC) -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
 
 %.o: %.c
 	@echo "[CC]\t$@"

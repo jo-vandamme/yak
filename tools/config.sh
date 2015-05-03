@@ -9,6 +9,8 @@ export AS=${HOST}-as
 export CC=${HOST}-gcc
 export CPP=${HOST}-cpp
 export LD=${HOST}-ld
+export OBJDUMP=${HOST}-objdump
+export OBJCOPY=${HOST}-objcopy
 
 export PREFIX=/usr
 export EXEC_PREFIX=$PREFIX
