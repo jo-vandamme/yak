@@ -2,8 +2,8 @@
 
 qemu-system-x86_64 \
     -hda disk.img \
-    -m 128M \
-    -smp 8 \
+    -m 8G \
+    -smp 16 \
     -vga std \
     -monitor stdio \
     -no-reboot \

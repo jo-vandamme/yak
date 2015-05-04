@@ -29,7 +29,7 @@ typedef struct
     unsigned node_size;
 } stack_t;
 
-void stack_init(stack_t *stack, struct stack_node *buffer, size_t size, unsigned node_size);
+void stack_init(stack_t *stack, struct stack_node *buffer, const size_t size, const unsigned node_size);
 struct stack_node *stack_alloc(stack_t *stack);
 void stack_free(stack_t *stack, struct stack_node *node);
 

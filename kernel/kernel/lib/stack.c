@@ -2,7 +2,7 @@
 #include <yak/lib/atomic.h>
 #include <yak/lib/stack.h>
 
-void stack_init(stack_t *stack, struct stack_node *buffer, size_t size, unsigned node_size)
+void stack_init(stack_t *stack, struct stack_node *buffer, const size_t size, const unsigned node_size)
 {
     stack->node_buffer = buffer;
     stack->head.node = buffer;
@@ -17,7 +17,8 @@ void stack_free(stack_t *stack, struct stack_node *node)
     union stack_head orig_head;
     union stack_head new_head;
 
-    if (node < stack->node_buffer || node > stack->node_buffer + stack->max_size * stack->node_size)
+    if (node < stack->node_buffer || 
+            (uintptr_t)node > (uintptr_t)stack->node_buffer + stack->max_size * stack->node_size)
         return;
 
     // copy the head
@@ -48,7 +49,8 @@ struct stack_node *stack_alloc(stack_t *stack)
 
     do {
         // check if the stack is empty
-        if (orig_head.node == 0)
+        if ((uintptr_t)orig_head.node >= 
+                (uintptr_t)stack->node_buffer + stack->max_size * stack->node_size)
             return 0;
 
         // get the node pointed to by the head

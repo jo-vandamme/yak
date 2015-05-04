@@ -199,6 +199,7 @@ get_flags:
                 break;
 
             case 'p':
+                flags |= LOWER_CASE;
                 if (field_width == -1) {
                     field_width = 16;
                     flags |= PAD_ZEROES;

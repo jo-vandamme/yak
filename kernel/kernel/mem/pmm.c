@@ -203,7 +203,7 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
     frame_stack_t *stack = &global_frame_stack;
     stack_block_t *s = stack->top;
 
-    printk(LOG "initializing memory");
+    printk(LOG "creating frames freelist\n");
 
     uintptr_t mmap_stop = VMM_P2V(mbi->mmap_addr) + mbi->mmap_length;
     uintptr_t frame, last_frame;
@@ -219,10 +219,10 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
         if (frame == 0)
             frame += PAGE_SIZE;
 
-        //printk("%s freeing %016x:%016x - %uMB-%uKB = %u frames ", 
-        //    logid, frame, last_frame, 
-        //    byte2mb(last_frame - frame), byte2kb(last_frame - frame), 
-        //    (last_frame - frame) / PAGE_SIZE);
+        printk(LOG "freeing %016x:%016x - %uMB-%uKB = %u frames ", 
+            frame, last_frame, 
+            byte2mb(last_frame - frame), byte2kb(last_frame - frame), 
+            (last_frame - frame) / PAGE_SIZE);
 
         unsigned long i = 0;
         for (; frame + PAGE_SIZE <= last_frame; frame += PAGE_SIZE) {
@@ -250,9 +250,8 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
             ++stack->free_frames;
             if (++i % 50000 == 0) printk(".");
         }
-        //printk("\n");
+        printk("\n");
     }
-    printk("\n");
     total_frames = global_frame_stack.free_frames;
     print_mem_stat_global();
 

@@ -75,7 +75,7 @@ static INIT_CODE uintptr_t search_sdt(uintptr_t rsdt_address, int xsdt, char sig
     sdt_header_t *header = (sdt_header_t *)map_temp(rsdt_address);
     int entries = (header->length - sizeof(sdt_header_t)) / (xsdt ? 8 : 4);
     if (header->length > PAGE_SIZE)
-        panic("TODO: Map more pages for the RSDT/XSDT structre!\n");
+        panic(LOG "TODO: Map more pages for the RSDT/XSDT structre!\n");
 
     sdt_header_t *h;
     uintptr_t sdt_ptr, sdt_ptr_loc;
@@ -139,7 +139,7 @@ INIT_CODE uintptr_t acpi_init(void)
 
     madt = search_sdt(rsdt_address, use_xsdt, "APIC");
     if (!madt) {
-        printk(LOG "\33\x0f\x40No SMP support\n");
+        printk(LOG "\33\x0f\x40MADT not found -> No SMP support\n");
     }
 
     uintptr_t hpet = search_sdt(rsdt_address, use_xsdt, "HPET");

@@ -54,15 +54,22 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     kbd_init();
 }
 
+#include <yak/arch/spinlock.h>
+static spinlock_t func_lock;
+
 void func(__unused void *r)
 {
     if (lapic_id() != 0)
         return;
+    spin_lock(&func_lock);
+
     int x, y;
     term_get_xy(&x, &y);
     term_set_xy(mode_info->res_x - 200, 0);
     printk("%016x", read_tsc());
     term_set_xy(x, y);
+
+    spin_unlock(&func_lock);
 }
 
 #include <yak/lib/pool.h>
@@ -74,7 +81,7 @@ struct mystruct {
     int d;
 };
 
-POOL_DECLARE(mypool, struct mystruct, 1000);
+POOL_DECLARE(mypool, struct mystruct, 100);
 
 void pool_func(__unused void *r)
 {
@@ -106,11 +113,16 @@ void kernel_main(u64_t magic, u64_t mboot)
     // kernel initialized - load ramdisk
     // and start init process here
 
-    isr_register(0x20, func);
+    //isr_register(0x20, func);
 
+    printk("\n");
     POOL_INIT(mypool);
     isr_register(60, pool_func);
-    //lapic_send_ipi(0, 60);
+    lapic_send_ipi(0, 60);
+    lapic_send_ipi(1, 60);
+    lapic_send_ipi(2, 60);
+    lapic_send_ipi(3, 60);
+    lapic_send_ipi(4, 60);
 
     for (;;) {
         if (kbd_lastchar() == 'q')

@@ -174,7 +174,10 @@ longmode:
     # load a GDT located in high memory
     lgdt gdt_ptr_high
 
+    # rbp is used for stack traces and must be set to 0
+    # this way, the stack trace will stop here
     movq $0, %rbp
+
 	movq $kernel_main, %rcx
     jmpq *%rcx
 
