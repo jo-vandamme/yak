@@ -10,7 +10,8 @@
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
 
-#define LOG LOG_COLOR0 "pmm:\33r"
+//#define LOG LOG_COLOR0 "     pmm:\33r"
+#define LOG LOG_PREFIX("pmm", 5)
 
 extern multiboot_info_t *mbi;
 
@@ -176,7 +177,7 @@ static void print_mem_stat(frame_stack_t *stack)
 {
     unsigned long total_free = stack->free_frames * PAGE_SIZE;
 
-    printk(LOG " %uGiB-%uMiB-%uKiB available (%u frames)\n", 
+    printk(LOG "%uGiB-%uMiB-%uKiB available (%u frames)\n", 
             byte2gb(total_free), byte2mb(total_free), byte2kb(total_free), stack->free_frames);
 }
 
@@ -203,7 +204,7 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
     frame_stack_t *stack = &global_frame_stack;
     stack_block_t *s = stack->top;
 
-    printk(LOG " initializing memory");
+    printk(LOG "initializing memory");
 
     uintptr_t mmap_stop = VMM_P2V(mbi->mmap_addr) + mbi->mmap_length;
     uintptr_t frame, last_frame;

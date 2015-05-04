@@ -16,7 +16,8 @@
 #include <yak/arch/lapic.h>
 #include <yak/dev/keyboard.h>
 
-#define LOG LOG_COLOR0 "main:\33r"
+//#define LOG LOG_COLOR0 "    main:\33r"
+#define LOG LOG_PREFIX("main", 4)
 
 multiboot_info_t *mbi;
 vbe_mode_info_t *mode_info;
@@ -30,7 +31,7 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
 
     int gap = 110;
     int margin = 10;
-    term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, gap, 0xd0d0d0, 0x000000, 0);
+    term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, gap, 0xffffff, 0x000000, 0);
     printk("\33\x03\xfa##    ##  ###    ##    ## \n" \
            "\33\x03\xfa ##  ##  ## ##   ##   ##  \n" \
            "\33\x03\xfa  ####  ##   ##  ##  ##   \33\x03\xdd Kernel build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
@@ -40,12 +41,12 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
            "\33\x03\xfa   ##  ##     ## ##    ## \33r", &KERN_BNUM);
 
     term_init(1, mode_info, margin, gap + 2*margin, 
-            mode_info->res_x - 2*margin, mode_info->res_y - 3*margin - gap, 0xd0d0d0, 0x000000, 1);
+            mode_info->res_x - 2*margin, mode_info->res_y - 3*margin - gap, 0xffffff, 0x000000, 1);
 
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");
 
-    printk(LOG " resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
+    printk(LOG "resolution %ux%ux%u\n", mode_info->res_x, mode_info->res_y, mode_info->bpp);
     
     // we should not allocate memory before mem_init(),
     // which means that some PML3...PML1 tables must be set statistically.
@@ -109,17 +110,15 @@ void kernel_main(u64_t magic, u64_t mboot)
 
     mem_reclaim_init();
     print_mem_stat_global();
-    printk("\33\x08\x88--------------- INIT DONE ---------------\n\n");
 
     // kernel initialized - load ramdisk
     // and start init process here
 
-    term_fg_color(0xffffff);
     isr_register(0x20, func);
 
     POOL_INIT(mypool);
     isr_register(60, pool_func);
-    lapic_send_ipi(0, 60);
+    //lapic_send_ipi(0, 60);
 
     for (;;) {
         if (kbd_lastchar() == 'q')

@@ -6,7 +6,8 @@
 #include <yak/dev/keymap.h>
 #include <yak/dev/keyboard.h>
 
-#define LOG LOG_COLOR0 "kbd:\33r"
+//#define LOG LOG_COLOR0 "     kbd:\33r"
+#define LOG LOG_PREFIX("kbd", 5)
 
 #define IRQ_KBD 1
 
@@ -188,7 +189,7 @@ void kbd_init()
     
     isr_register(IRQ(IRQ_KBD), kbd_handler);
     ioapic_set_irq(IRQ_KBD, IRQ(IRQ_KBD), 0);
-    printk(LOG " Keyboard initialized\n");
+    printk(LOG "Keyboard initialized\n");
 
     kbd_set_leds(0, 0, 0);
 }

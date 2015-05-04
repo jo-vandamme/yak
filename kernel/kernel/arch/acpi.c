@@ -5,7 +5,8 @@
 #include <yak/mem/mem.h>
 #include <yak/arch/acpi.h>
 
-#define LOG LOG_COLOR0 "acpi:\33r"
+//#define LOG LOG_COLOR0 "    acpi:\33r"
+#define LOG LOG_PREFIX("acpi", 4)
 
 // Root System Description Pointer
 typedef struct
@@ -97,12 +98,12 @@ INIT_CODE uintptr_t acpi_init(void)
 
     rsdp_t *rsdp = search_rsdp();
     if (!rsdp) {
-        printk(LOG " No ACPI support detected!\n");
+        printk(LOG "\33\x0f\x40No ACPI support detected!\n");
         return madt;
     }
     char oem_id[7] = { 0 };
     memcpy(oem_id, rsdp->oem_id, 6);
-    printk(LOG " RSDP [%016x] - Rev: %u - OEMID: %s\n",
+    printk(LOG "RSDP [%016x] - Rev: %u - OEMID: %s\n",
            ((uintptr_t)rsdp - VIRTUAL_BASE), rsdp->revision + 1, oem_id);
 
     int use_xsdt = 0;
@@ -110,7 +111,7 @@ INIT_CODE uintptr_t acpi_init(void)
     if (rsdp->revision >= 1) {
         rsdp2_t *rsdp2 = (rsdp2_t *)rsdp;
         if (checksum((unsigned char *)rsdp2, sizeof(rsdp2_t)) != 0) {
-            printk(LOG " Invalid RSDP2 checksum!\n");
+            printk(LOG "\33\x0f\x40Invalid RSDP2 checksum!\n");
             return madt;
         }
         use_xsdt = 1;
@@ -119,7 +120,7 @@ INIT_CODE uintptr_t acpi_init(void)
 
     sdt_header_t *rsdt = (sdt_header_t *)map_temp(rsdt_address);
     if (checksum((unsigned char *)rsdt, rsdt->length) != 0) {
-        printk(LOG " Bad RSDT checksum\n");
+        printk(LOG "\33\x0f\100Bad RSDT checksum\n");
         return madt;
     }
     char oem_table_id[9] = { 0 };
@@ -131,20 +132,20 @@ INIT_CODE uintptr_t acpi_init(void)
     creator_id[2] = ((cid >> 16) & 0xff);
     creator_id[1] = ((cid >> 8) & 0xff);
     creator_id[0] = (cid & 0xff);
-    printk(LOG " RSDT [%016x] - Rev: %u - OEMID: %s\n" \
-           LOG " OEM Table ID: %s - OEM Rev: %u - " \
-           "Creator ID: %s - Creator Rev: %u\n",
+    printk(LOG "RSDT [%016x] - Rev: %u - OEMID: %s\n" \
+           LOG "OEM Table ID: %s - OEM Rev: %u - " \
+           "Creator ID: %s - Creator Rev: %#x\n",
            rsdt_address, rsdt->revision, oem_id, oem_table_id, 
            rsdt->oem_revision, creator_id, rsdt->creator_revision);
 
     madt = search_sdt(rsdt_address, use_xsdt, "APIC");
     if (!madt) {
-        printk(LOG " No SMP support\n");
+        printk(LOG "\33\x0f\x40No SMP support\n");
     }
 
     uintptr_t hpet = search_sdt(rsdt_address, use_xsdt, "HPET");
     if (!hpet) {
-        printk(LOG " No HPET support\n");
+        printk(LOG "\33\x0f\x40No HPET support\n");
     }
 
     return madt;

@@ -17,7 +17,8 @@
 #include <yak/cpu/percpu.h>
 #include <yak/cpu/mp.h>
 
-#define LOG LOG_COLOR0 "smp:\33r"
+//#define LOG LOG_COLOR0 "     smp:\33r"
+#define LOG LOG_PREFIX("smp", 5)
 
 typedef struct
 {
@@ -182,7 +183,7 @@ void start_ap(unsigned int proc_id, unsigned int lapic_id, uintptr_t addr)
     }
     if (*ap_status != AP_STARTED) {
         *ap_status = AP_READY; // don't block bsp
-        printk(LOG "\33\x0f\x40 Unable to start core %u with lapic id %u\n", proc_id, lapic_id);
+        printk(LOG "\33\x0f\x40Unable to start core %u with lapic id %u\n", proc_id, lapic_id);
     } else {
         *ap_status = AP_CONTINUE;
         ++cores_alive;
@@ -228,7 +229,7 @@ INIT_CODE void madt_get_info(uintptr_t madt_address, struct madt_info *info)
         }
         record += *(record + 1);
     }
-    printk(LOG " detected %u core(s) - %u enabled\n", info->total_cores, info->enabled_cores);
+    printk(LOG "detected %u core(s) - %u enabled\n", info->total_cores, info->enabled_cores);
 }
 
 extern const char trampoline[];
@@ -310,24 +311,24 @@ INIT_CODE void mp_init1(void)
                 if (override->bus_source == INTR_BUS_ISA)
                     ioapic_add_override(override->irq_source, override->interrupt, override->flags);
                 else 
-                    printk(LOG "\33\x0f\x40 ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = %#04x\n",
+                    printk(LOG "\33\x0f\x40ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = %#04x\n",
                             override->bus_source, override->irq_source, override->interrupt, override->flags);
                 break;
 
             case MADT_LAPIC_NMI: ;
                 madt_lapic_nmi_t *lapic_nmi = (madt_lapic_nmi_t *)(record + sizeof(madt_record_t));
-                printk(LOG "\33\x0f\x40 ignoring LAPIC NMI: acpi proc id = %u, flags = %04x, lapic LINTn = %u\n",
+                printk(LOG "\33\x0f\x40ignoring LAPIC NMI: acpi proc id = %u, flags = %04x, lapic LINTn = %u\n",
                         lapic_nmi->acpi_proc_id, lapic_nmi->flags, lapic_nmi->lapic_lintn);
                 break;
 
             default: ;
-                printk(LOG " \33\x0f\x40skipping MADT entry: %s [%u]\n", 
+                printk(LOG "\33\x0f\x40skipping MADT entry: %s [%u]\n", 
                         *record >= 0xd ? "Reserved" : madt_entry_label[*record], *record);
                 break;
         }
         record += *(record + 1); // add length (field 1)
     }
-    printk(LOG " %u cores have been started\n", cores_alive);
+    printk(LOG "%u cores have been started\n", cores_alive);
 
     local_irq_enable();
 }

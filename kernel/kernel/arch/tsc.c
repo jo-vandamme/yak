@@ -3,7 +3,8 @@
 #include <yak/arch/pit.h>
 #include <yak/arch/tsc.h>
 
-#define LOG LOG_COLOR0 "tsc:\33r"
+//#define LOG LOG_COLOR0 "     tsc:\33r"
+#define LOG LOG_PREFIX("tsc", 5)
 
 static uint64_t cpu_freq;
 
@@ -49,5 +50,5 @@ INIT_CODE void tsc_init(void)
     }
     cpu_freq = diff_max * (1000u / ms_delay);
 
-    printk(LOG " detected %u MHz processor\n", cpu_freq / 1000000);
+    printk(LOG "detected %u MHz processor\n", cpu_freq / 1000000);
 }

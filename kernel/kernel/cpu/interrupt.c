@@ -7,7 +7,8 @@
 #include <yak/cpu/registers.h>
 #include <yak/cpu/interrupt.h>
 
-#define LOG LOG_COLOR0 "isr:\33r"
+//#define LOG LOG_COLOR0 "     isr:\33r"
+#define LOG LOG_PREFIX("isr", 5)
 #define ISR_POOL_SIZE 256
 
 POOL_DECLARE(isr_pool, struct isr_node, ISR_POOL_SIZE);
@@ -75,7 +76,7 @@ static int page_fault_handler(__unused registers_t *regs)
     uintptr_t faulting_address;
     asm volatile("movq %%cr2, %0" : "=r"(faulting_address));
 
-    printk(LOG " Page fault @ %016x %s %s %s %s\n", faulting_address,
+    printk(LOG "Page fault @ %016x %s %s %s %s\n", faulting_address,
            error.present ? "[Present]" : "",
            error.write ? "[Write]" : "",
            error.user ? "[User]" : "",
@@ -105,7 +106,7 @@ void interrupt_dispatch(void *r)
         }
     }
     if (!stop && !node && regs->vector != IRQ(0))
-        printk(LOG "\33\x0f\x40 Uncaught exception #%u\n", regs->vector);
+        printk(LOG "\33\x0f\x40Uncaught exception #%u\n", regs->vector);
 
     // handlers execution for exceptions and irq
     while (node) {

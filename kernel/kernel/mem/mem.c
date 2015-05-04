@@ -10,7 +10,8 @@
 #include <yak/mem/mmap.h>
 #include <yak/mem/mem.h>
 
-#define LOG LOG_COLOR0 "mem:\33r"
+//#define LOG LOG_COLOR0 "    [mem]\33r"
+#define LOG LOG_PREFIX("mem", 5)
 
 extern multiboot_info_t *mbi;
 extern vbe_mode_info_t *mode_info;
@@ -114,7 +115,7 @@ void mem_reclaim_init(void)
         free_frame(frame - VIRTUAL_BASE);
     }
 
-    printk(LOG " reclaimed init memory %016x:%016x - %u frames\n", start, stop, n);
+    printk(LOG "reclaimed init memory %016x:%016x - %u frames\n", start, stop, n);
 }
 
 /*

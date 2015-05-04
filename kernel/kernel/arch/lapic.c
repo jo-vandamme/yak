@@ -6,7 +6,8 @@
 #include <yak/arch/tsc.h>
 #include <yak/arch/lapic.h>
 
-#define LOG LOG_COLOR0 "lapic:\33r"
+//#define LOG LOG_COLOR0 "   lapic:\33r"
+#define LOG LOG_PREFIX("lapic", 3)
 
 // Local APIC register offsets, divided by 4 for use as uint[] indices
 
@@ -191,14 +192,14 @@ INIT_CODE void lapic_init(const uintptr_t lapic_base)
     uint32_t ver = v & 0x000000ff;
     uint32_t max_lvt = (v & 0x00ff0000) >> 16;
 
-    printk(LOG " base: %#016x version: %u, %u LVTs, LAPIC ID: %u\n", 
+    printk(LOG "base: %#016x version: %u, %u LVTs, LAPIC ID: %u\n", 
            lapic_base, ver, max_lvt, id);
 
     timer_freq = lapic_timer_calib();
-    printk(LOG " detected %u MHz bus clock\n", timer_freq / 1000000);
+    printk(LOG "detected %u MHz bus clock\n", timer_freq / 1000000);
 
     lapic_enable(1);
-    //printk(LOG " local apic initialized\n");
+    //printk(LOG "local apic initialized\n");
 }
 
 uint8_t lapic_id(void)

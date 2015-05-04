@@ -4,7 +4,8 @@
 #include <yak/arch/spinlock.h>
 #include <yak/arch/ioapic.h>
 
-#define LOG LOG_COLOR0 "ioapic:\33r"
+//#define LOG LOG_COLOR0 "  ioapic:\33r"
+#define LOG LOG_PREFIX("ioapic", 2)
 
 #define MAX_IOAPICS 8 // arbitrary
 
@@ -150,7 +151,7 @@ void ioapic_add(const uint8_t id, const uintptr_t ioapic_base, const uint32_t in
     for (int i = 0; i < verreg.max_red_entry + 1; ++i)
         ioapic_mask_irq(i, num_ioapics);
 
-    printk(LOG " base: %#016x version: %u, %u redirection entries IOAPIC ID: %u\n", 
+    printk(LOG "base: %#016x version: %u, %u redirection entries IOAPIC ID: %u\n", 
             ioapic_base, verreg.version, verreg.max_red_entry + 1, idreg.id);
 
     ++num_ioapics;
@@ -184,10 +185,10 @@ void ioapic_modify_irq(const uint8_t irq, const redtbl_entry_t entry)
         if (gsi >= ioapics[id].int_base && gsi <= ioapics[id].int_max)
             break;
     if (id == num_ioapics) {
-        printk("\33\x0f\x40<ioapic> IRQ #%u isn't mapped to the IOAPIC(s)\n", gsi);
+        printk(LOG "\33\x0f\x40IRQ #%u isn't mapped to the IOAPIC(s)\n", gsi);
         return;
     }
-    printk(LOG " mapping irq #%u (gsi #%u, ioapic #%u) to isr #%u on lapic #%u\n", 
+    printk(LOG "mapping irq #%u (gsi #%u, ioapic #%u) to isr #%u on lapic #%u\n", 
             irq, gsi, id, entry.vector, entry.destination);
 
     const uint32_t low_index  = IOREDTBL + gsi * 2;
@@ -249,7 +250,7 @@ void ioapic_add_override(const uint8_t source, const uint32_t gsi, const uint16_
     int_overrides[num_int_overrides].gsi = gsi;
     int_overrides[num_int_overrides].flags = flags;
 
-    printk(LOG " interrupt override: %u->%u, flags = %#04x\n", source, gsi, flags);
+    printk(LOG "interrupt override: %u->%u, flags = %#04x\n", source, gsi, flags);
 
     ++num_int_overrides;
 }
