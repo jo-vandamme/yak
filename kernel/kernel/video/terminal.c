@@ -73,6 +73,8 @@ inline void term_puts(const char *str)
 void term_clear(void)
 {
     term_surf[current_term].rend->clear(&term_surf[current_term]);
+    term_surf[current_term].x = 0;
+    term_surf[current_term].y = 0;
 }
 
 int term_fg_color(int c)

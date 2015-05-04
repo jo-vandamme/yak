@@ -30,10 +30,10 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
 
     int margin = 10;
     term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, 
-            mode_info->res_y - 2*margin, 0xffffff, 0x000000, 1);
+            mode_info->res_y - 2*margin, 0xd0d0d0, 0x000000, 1);
 
-    printk("\33\x03\xfaYAK Kernel\33r build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
-           "\33\x03\xfa==========\33r Copyright 2015-2016: Jonathan Vandamme. All rights reserved.\n\n", &KERN_BNUM);
+    printk("\33\x06\x6fYAK Kernel\33r build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
+           "\33\x06\x6f          \33r Copyright 2015-2016: Jonathan Vandamme. All rights reserved.\n\n", &KERN_BNUM);
 
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");
@@ -108,25 +108,45 @@ void kernel_main(u64_t magic, u64_t mboot)
     init_system(magic, mboot);
 
     mem_reclaim_init();
-    print_mem_stat_global();
 
     // kernel initialized - load ramdisk
     // and start init process here
 
     //isr_register(0x20, func);
 
-    printk("\n");
     POOL_INIT(mypool);
     isr_register(60, pool_func);
-    lapic_send_ipi(0, 60);
-    lapic_send_ipi(1, 60);
-    lapic_send_ipi(2, 60);
-    lapic_send_ipi(3, 60);
-    lapic_send_ipi(4, 60);
 
+    int i;
+    const unsigned size = 100;
+    char str[size];
+    char *command;
+
+    printk("\n");
     for (;;) {
-        if (kbd_lastchar() == 'q')
+        printk("\33\x06\xf6yak $ ");
+
+        for (i = 0; (str[i] = (char)kbd_getchar()) != '\n'; ++i) { }
+        str[i] = '\0';
+        for (--i; i != 0 && (str[i] == ' ' || str[i] == '\t'); --i)
+            str[i] = '\0';
+        for (command = str; *command == ' ' || *command == '\t'; ++command) { }
+
+        if (strncmp(command, "exit", size) == 0) {
+            printk("Rebooting!\n");
+            pit_mdelay(200);
             kbd_reset_system();
+        }
+        else if (strncmp(command, "uname", size) == 0)
+            printk("YAK v0.1\n");
+        else if (strncmp(command, "testpool", size) == 0)
+            lapic_send_ipi(0, 60);
+        else if (strncmp(command, "clear", size) == 0)
+            term_clear();
+        else if (strncmp(command, "free", size) == 0)
+            print_mem_stat_global();
+        else if (*command)
+            printk("\33\x0f\x11Unknown command [%s]\n", command);
     }
 }
 

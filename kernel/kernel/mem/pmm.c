@@ -176,7 +176,7 @@ static void print_mem_stat(frame_stack_t *stack)
 {
     unsigned long total_free = stack->free_frames * PAGE_SIZE;
 
-    printk(LOG "%uGiB-%uMiB-%uKiB available (%u frames)\n", 
+    printk("Memory: %uGiB %uMiB %uKiB (%u frames)\n", 
             byte2gb(total_free), byte2mb(total_free), byte2kb(total_free), stack->free_frames);
 }
 
@@ -253,6 +253,7 @@ INIT_CODE void pmm_init(uintptr_t kstart, uintptr_t kstop)
         printk("\n");
     }
     total_frames = global_frame_stack.free_frames;
+    printk(LOG);
     print_mem_stat_global();
 
     /*
