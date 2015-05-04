@@ -6,8 +6,7 @@
 #include <yak/dev/keymap.h>
 #include <yak/dev/keyboard.h>
 
-//#define LOG LOG_COLOR0 "     kbd:\33r"
-#define LOG LOG_PREFIX("kbd", 5)
+#define LOG LOG_PREFIX("kbd", 3)
 
 #define IRQ_KBD 1
 
@@ -167,7 +166,8 @@ uint8_t kbd_getchar()
 {
     uint8_t c;
 
-    while (read_idx == write_idx) ;
+    while (read_idx == write_idx) 
+        cpu_relax();
 
     c = kbd_buffer[read_idx];
     read_idx = (read_idx + 1) % KBD_BUF_SIZE;

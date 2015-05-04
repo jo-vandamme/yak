@@ -10,7 +10,7 @@
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
 
-#define LOG LOG_PREFIX("pmm", 5)
+#define LOG LOG_PREFIX("pmm", 3)
 
 extern multiboot_info_t *mbi;
 

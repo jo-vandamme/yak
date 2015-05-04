@@ -5,7 +5,8 @@
 #include <yak/mem/mem.h>
 #include <yak/arch/acpi.h>
 
-#define LOG LOG_PREFIX("acpi", 4)
+#define LOG LOG_PREFIX("acpi", 2)
+#define LOG_ERR LOG_PREFIX_ERROR("acpi", 2)
 
 // Root System Description Pointer
 typedef struct
@@ -97,7 +98,7 @@ INIT_CODE uintptr_t acpi_init(void)
 
     rsdp_t *rsdp = search_rsdp();
     if (!rsdp) {
-        printk(LOG "\33\x0f\x40No ACPI support detected!\n");
+        printk(LOG_ERR "No ACPI support detected!\n");
         return madt;
     }
     char oem_id[7] = { 0 };
@@ -110,7 +111,7 @@ INIT_CODE uintptr_t acpi_init(void)
     if (rsdp->revision >= 1) {
         rsdp2_t *rsdp2 = (rsdp2_t *)rsdp;
         if (checksum((unsigned char *)rsdp2, sizeof(rsdp2_t)) != 0) {
-            printk(LOG "\33\x0f\x40Invalid RSDP2 checksum!\n");
+            printk(LOG_ERR "Invalid RSDP2 checksum!\n");
             return madt;
         }
         use_xsdt = 1;
@@ -119,7 +120,7 @@ INIT_CODE uintptr_t acpi_init(void)
 
     sdt_header_t *rsdt = (sdt_header_t *)map_temp(rsdt_address);
     if (checksum((unsigned char *)rsdt, rsdt->length) != 0) {
-        printk(LOG "\33\x0f\100Bad RSDT checksum\n");
+        printk(LOG_ERR "Bad RSDT checksum\n");
         return madt;
     }
     char oem_table_id[9] = { 0 };
@@ -139,12 +140,12 @@ INIT_CODE uintptr_t acpi_init(void)
 
     madt = search_sdt(rsdt_address, use_xsdt, "APIC");
     if (!madt) {
-        printk(LOG "\33\x0f\x40MADT not found -> No SMP support\n");
+        printk(LOG_ERR "MADT not found -> No SMP support\n");
     }
 
     uintptr_t hpet = search_sdt(rsdt_address, use_xsdt, "HPET");
     if (!hpet) {
-        printk(LOG "\33\x0f\x40No HPET support\n");
+        printk(LOG_ERR "No HPET support\n");
     }
 
     return madt;

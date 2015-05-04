@@ -6,7 +6,7 @@
 #include <yak/arch/tsc.h>
 #include <yak/arch/lapic.h>
 
-#define LOG LOG_PREFIX("lapic", 3)
+#define LOG LOG_PREFIX("lapic", 1)
 
 // Local APIC register offsets, divided by 4 for use as uint[] indices
 

@@ -10,7 +10,7 @@
 #include <yak/mem/mmap.h>
 #include <yak/mem/mem.h>
 
-#define LOG LOG_PREFIX("mem", 5)
+#define LOG LOG_PREFIX("mem", 3)
 
 extern multiboot_info_t *mbi;
 extern vbe_mode_info_t *mode_info;

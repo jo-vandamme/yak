@@ -17,7 +17,8 @@
 #include <yak/cpu/percpu.h>
 #include <yak/cpu/mp.h>
 
-#define LOG LOG_PREFIX("smp", 5)
+#define LOG LOG_PREFIX("smp", 3)
+#define LOG_ERR LOG_PREFIX_ERROR("smp", 3)
 
 typedef struct
 {
@@ -310,18 +311,18 @@ INIT_CODE void mp_init1(void)
                 if (override->bus_source == INTR_BUS_ISA)
                     ioapic_add_override(override->irq_source, override->interrupt, override->flags);
                 else 
-                    printk(LOG "\33\x0f\x40ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = %#04x\n",
+                    printk(LOG_ERR "ignoring INT OVERRIDE entry: bus = %u, source = %u, int = %u, flags = %#04x\n",
                             override->bus_source, override->irq_source, override->interrupt, override->flags);
                 break;
 
             case MADT_LAPIC_NMI: ;
                 madt_lapic_nmi_t *lapic_nmi = (madt_lapic_nmi_t *)(record + sizeof(madt_record_t));
-                printk(LOG "\33\x0f\x40ignoring LAPIC NMI: acpi proc id = %u, flags = %04x, lapic LINTn = %u\n",
+                printk(LOG_ERR "ignoring LAPIC NMI: acpi proc id = %u, flags = %04x, lapic LINTn = %u\n",
                         lapic_nmi->acpi_proc_id, lapic_nmi->flags, lapic_nmi->lapic_lintn);
                 break;
 
             default: ;
-                printk(LOG "\33\x0f\x40skipping MADT entry: %s [%u]\n", 
+                printk(LOG_ERR "skipping MADT entry: %s [%u]\n", 
                         *record >= 0xd ? "Reserved" : madt_entry_label[*record], *record);
                 break;
         }

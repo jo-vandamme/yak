@@ -16,7 +16,7 @@
 #include <yak/arch/lapic.h>
 #include <yak/dev/keyboard.h>
 
-#define LOG LOG_PREFIX("main", 4)
+#define LOG LOG_PREFIX("main", 2)
 
 multiboot_info_t *mbi;
 vbe_mode_info_t *mode_info;
@@ -30,10 +30,10 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
 
     int margin = 10;
     term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, 
-            mode_info->res_y - 2*margin, 0xd0d0d0, 0x000000, 1);
+            mode_info->res_y - 2*margin, 0xc0c0c0, 0x000000, 1);
 
-    printk("\33\x06\x6fYAK Kernel\33r build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
-           "\33\x06\x6f          \33r Copyright 2015-2016: Jonathan Vandamme. All rights reserved.\n\n", &KERN_BNUM);
+    printk("\33\x06\x6fYAK Kernel\33\x08\x88 build %u compiled on " 
+            __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n\n", &KERN_BNUM);
 
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");
@@ -112,7 +112,7 @@ void kernel_main(u64_t magic, u64_t mboot)
     // kernel initialized - load ramdisk
     // and start init process here
 
-    //isr_register(0x20, func);
+    isr_register(0x20, func);
 
     POOL_INIT(mypool);
     isr_register(60, pool_func);
@@ -121,6 +121,7 @@ void kernel_main(u64_t magic, u64_t mboot)
     const unsigned size = 100;
     char str[size];
     char *command;
+    int bg = 0x000000, fg = 0xc0c0c0;
 
     printk("\n");
     for (;;) {
@@ -145,8 +146,14 @@ void kernel_main(u64_t magic, u64_t mboot)
             term_clear();
         else if (strncmp(command, "free", size) == 0)
             print_mem_stat_global();
+        else if (strncmp(command, "invert", size) == 0) {
+            bg = ~bg;
+            fg = ~fg;
+            term_bg_color(bg);
+            term_fg_color(fg);
+        }
         else if (*command)
-            printk("\33\x0f\x11Unknown command [%s]\n", command);
+            printk("\33\x08\x88Unknown command [%s]\n", command);
     }
 }
 
