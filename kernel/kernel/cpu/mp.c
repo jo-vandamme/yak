@@ -129,6 +129,11 @@ static struct madt_info madt_info;
 static unsigned int cores_alive = 1;
 static unsigned int next_proc_id = 1;
 
+unsigned int num_running_cores(void)
+{
+    return cores_alive;
+}
+
 void ap_main(unsigned int id, uintptr_t percpu_base)
 {
     percpu_init(id, percpu_base);

@@ -103,6 +103,34 @@ void pool_func(__unused void *r)
     printk("%p %p %p %p\n", m0, m1, m4, m5);
 }
 
+#include <yak/lib/rand.h>
+void matrix_anim(__unused void *r)
+{
+    int x_, y_;
+    int fg_, col;
+    term_get_xy(&x_, &y_);
+    fg_ = term_fg_color(0x00ff00);
+
+    while (1) {
+        int x = rand() % (unsigned)mode_info->res_x;
+        int y = rand() % ((unsigned)mode_info->res_y - 40);
+        x = (x/12) * 12;
+        y = (y/12) * 12;
+        col = (rand() % 0x80 + 0x7f) << 8;
+
+        term_set_xy(x, y);
+        term_fg_color(col);
+        term_putc(rand() % 36 + '0');
+
+        tsc_udelay(10);
+        if (kbd_lastchar() == 'x')
+            break;
+    }
+    kbd_getchar();
+    term_fg_color(fg_);
+    term_set_xy(x_, y_);
+}
+
 void kernel_main(u64_t magic, u64_t mboot)
 {
     init_system(magic, mboot);
@@ -116,6 +144,8 @@ void kernel_main(u64_t magic, u64_t mboot)
 
     POOL_INIT(mypool);
     isr_register(60, pool_func);
+
+    isr_register(70, matrix_anim);
 
     int i;
     const unsigned size = 100;
@@ -135,7 +165,7 @@ void kernel_main(u64_t magic, u64_t mboot)
 
         if (strncmp(command, "exit", size) == 0) {
             printk("Rebooting!\n");
-            pit_mdelay(200);
+            pit_mdelay(100);
             kbd_reset_system();
         }
         else if (strncmp(command, "uname", size) == 0)
@@ -146,6 +176,10 @@ void kernel_main(u64_t magic, u64_t mboot)
             term_clear();
         else if (strncmp(command, "free", size) == 0)
             print_mem_stat_global();
+        else if (strncmp(command, "matrix", size) == 0) {
+            int id = num_running_cores() > 1 ? 1 : 0;
+            lapic_send_ipi(id, 70);
+        }
         else if (strncmp(command, "invert", size) == 0) {
             bg = ~bg;
             fg = ~fg;
@@ -153,7 +187,7 @@ void kernel_main(u64_t magic, u64_t mboot)
             term_fg_color(fg);
         }
         else if (*command)
-            printk("\33\x08\x88Unknown command [%s]\n", command);
+            printk("\33\x0f\x44Unknown command [%s]\n", command);
     }
 }
 
