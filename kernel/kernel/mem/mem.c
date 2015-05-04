@@ -10,7 +10,6 @@
 #include <yak/mem/mmap.h>
 #include <yak/mem/mem.h>
 
-//#define LOG LOG_COLOR0 "    [mem]\33r"
 #define LOG LOG_PREFIX("mem", 5)
 
 extern multiboot_info_t *mbi;

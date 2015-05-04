@@ -10,7 +10,6 @@
 #include <yak/mem/mem.h>
 #include <yak/mem/pmm.h>
 
-//#define LOG LOG_COLOR0 "     pmm:\33r"
 #define LOG LOG_PREFIX("pmm", 5)
 
 extern multiboot_info_t *mbi;

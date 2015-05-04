@@ -17,7 +17,6 @@
 #include <yak/cpu/percpu.h>
 #include <yak/cpu/mp.h>
 
-//#define LOG LOG_COLOR0 "     smp:\33r"
 #define LOG LOG_PREFIX("smp", 5)
 
 typedef struct

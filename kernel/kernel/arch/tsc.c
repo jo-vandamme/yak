@@ -3,7 +3,6 @@
 #include <yak/arch/pit.h>
 #include <yak/arch/tsc.h>
 
-//#define LOG LOG_COLOR0 "     tsc:\33r"
 #define LOG LOG_PREFIX("tsc", 5)
 
 static uint64_t cpu_freq;

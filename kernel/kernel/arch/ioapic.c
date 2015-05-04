@@ -4,7 +4,6 @@
 #include <yak/arch/spinlock.h>
 #include <yak/arch/ioapic.h>
 
-//#define LOG LOG_COLOR0 "  ioapic:\33r"
 #define LOG LOG_PREFIX("ioapic", 2)
 
 #define MAX_IOAPICS 8 // arbitrary

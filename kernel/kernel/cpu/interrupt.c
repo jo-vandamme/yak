@@ -7,7 +7,6 @@
 #include <yak/cpu/registers.h>
 #include <yak/cpu/interrupt.h>
 
-//#define LOG LOG_COLOR0 "     isr:\33r"
 #define LOG LOG_PREFIX("isr", 5)
 #define ISR_POOL_SIZE 256
 

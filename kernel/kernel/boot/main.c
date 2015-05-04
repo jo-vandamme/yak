@@ -16,7 +16,6 @@
 #include <yak/arch/lapic.h>
 #include <yak/dev/keyboard.h>
 
-//#define LOG LOG_COLOR0 "    main:\33r"
 #define LOG LOG_PREFIX("main", 4)
 
 multiboot_info_t *mbi;
@@ -29,19 +28,12 @@ INIT_CODE void init_system(u64_t magic, u64_t mboot)
     mbi = (multiboot_info_t *)((u64_t)mboot + VIRTUAL_BASE);
     mode_info = (vbe_mode_info_t *)(mbi->vbe_mode_info + VIRTUAL_BASE);
 
-    int gap = 110;
     int margin = 10;
-    term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, gap, 0xffffff, 0x000000, 0);
-    printk("\33\x03\xfa##    ##  ###    ##    ## \n" \
-           "\33\x03\xfa ##  ##  ## ##   ##   ##  \n" \
-           "\33\x03\xfa  ####  ##   ##  ##  ##   \33\x03\xdd Kernel build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
-           "\33\x03\xfa   ##  ##     ## #####    \33\x03\xdd Copyright 2015-2016: Jonathan Vandamme. All rights reserved.\n" \
-           "\33\x03\xfa   ##  ######### ##  ##   \33\x03\xdd Kernel available under the Creative Commons Attribution license (CC BY).\n" \
-           "\33\x03\xfa   ##  ##     ## ##   ##  \n" \
-           "\33\x03\xfa   ##  ##     ## ##    ## \33r", &KERN_BNUM);
+    term_init(0, mode_info, margin, margin, mode_info->res_x - 2*margin, 
+            mode_info->res_y - 2*margin, 0xffffff, 0x000000, 1);
 
-    term_init(1, mode_info, margin, gap + 2*margin, 
-            mode_info->res_x - 2*margin, mode_info->res_y - 3*margin - gap, 0xffffff, 0x000000, 1);
+    printk("\33\x03\xfaYAK Kernel\33r build %u compiled on " __DATE__ " " __TIME__ " using gcc-" __VERSION__ ".\n" \
+           "\33\x03\xfa==========\33r Copyright 2015-2016: Jonathan Vandamme. All rights reserved.\n\n", &KERN_BNUM);
 
     if (magic != MBOOT_LOADER_MAGIC)
         panic("Bad multiboot magic value\n");

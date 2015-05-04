@@ -5,7 +5,6 @@
 #include <yak/mem/mem.h>
 #include <yak/arch/acpi.h>
 
-//#define LOG LOG_COLOR0 "    acpi:\33r"
 #define LOG LOG_PREFIX("acpi", 4)
 
 // Root System Description Pointer

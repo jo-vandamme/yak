@@ -29,6 +29,6 @@
 #define REP(x, n) REP ## n(x)
 #define XREP(x, n) REP(x, n)
 
-#define LOG_PREFIX(str, blanks) XREP(" ", blanks) "\33\x08\x88" str " -\33\x0f\xff "
+#define LOG_PREFIX(str, blanks) XREP(" ", blanks) "\33\x08\x88" str " >\33r "
 
 #endif
